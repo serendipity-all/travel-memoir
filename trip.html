@@ -617,23 +617,24 @@
       
       card.querySelector('.btn-add-spot').onclick = () => {
         const spotName = prompt('請輸入新增景點名稱（例：Dyrhólaey 迪霍拉里海蝕拱門）：');
-        if (spotName) {
+        if (spotName && spotName.trim()) {
           const newSpot = {
             id: `spot-new-${Date.now()}`,
-            name: spotName,
-            en: spotName,
+            name: spotName.trim(),
+            en: spotName.trim(),
             type: 'nature',
             lat: d.spots[0]?.lat || 64.14,
             lng: d.spots[0]?.lng || -21.92,
             img: 'images/kirkjufell.jpg',
             wiki: '',
-            highlight: '點擊此處輸入新增景點特色說明...',
+            highlight: '點擊編輯特色說明...',
             gear: '防風防水外套、好走的鞋',
             caution: '請留意現場天氣與安全指示。'
           };
           d.spots.push(newSpot);
-          sg.appendChild(spotCard(newSpot, d));
           saveItineraryToLocal();
+          renderDays();
+          if (map) initMap();
         }
       };
 
@@ -1073,23 +1074,42 @@
     document.addEventListener('click', (e) => {
       if (e.target.closest('.btn-move-up')) {
         const spotCardEl = e.target.closest('.spot-card');
-        if (spotCardEl && spotCardEl.previousElementSibling) {
-          spotCardEl.parentNode.insertBefore(spotCardEl, spotCardEl.previousElementSibling);
-          saveItineraryToLocal();
-        }
+        const spotId = spotCardEl.id.replace('spot-', '');
+        tripData.days.forEach(d => {
+          const idx = d.spots.findIndex(s => s.id === spotId);
+          if (idx > 0) {
+            const temp = d.spots[idx];
+            d.spots[idx] = d.spots[idx - 1];
+            d.spots[idx - 1] = temp;
+          }
+        });
+        saveItineraryToLocal();
+        renderDays();
       }
       if (e.target.closest('.btn-move-down')) {
         const spotCardEl = e.target.closest('.spot-card');
-        if (spotCardEl && spotCardEl.nextElementSibling) {
-          spotCardEl.parentNode.insertBefore(spotCardEl.nextElementSibling, spotCardEl);
-          saveItineraryToLocal();
-        }
+        const spotId = spotCardEl.id.replace('spot-', '');
+        tripData.days.forEach(d => {
+          const idx = d.spots.findIndex(s => s.id === spotId);
+          if (idx !== -1 && idx < d.spots.length - 1) {
+            const temp = d.spots[idx];
+            d.spots[idx] = d.spots[idx + 1];
+            d.spots[idx + 1] = temp;
+          }
+        });
+        saveItineraryToLocal();
+        renderDays();
       }
       if (e.target.closest('.btn-delete-spot')) {
         const spotCardEl = e.target.closest('.spot-card');
-        if (spotCardEl && confirm('確定要刪除這個景點嗎？')) {
-          spotCardEl.remove();
+        const spotId = spotCardEl.id.replace('spot-', '');
+        if (confirm('確定要刪除這個景點嗎？')) {
+          tripData.days.forEach(d => {
+            d.spots = d.spots.filter(s => s.id !== spotId);
+          });
           saveItineraryToLocal();
+          renderDays();
+          if (map) initMap();
         }
       }
       if (e.target.closest('.btn-wiki-match')) {
@@ -1159,23 +1179,31 @@
   }
 
   function saveItineraryToLocal() {
-    const dayList = document.getElementById('dayList');
-    if (dayList && dayList.innerHTML.includes('day-card')) {
-      localStorage.setItem('iceland_2026_editorial_days', dayList.innerHTML);
+    try {
+      localStorage.setItem(`memoir-trip-data-${tripId}`, JSON.stringify(tripData));
+    } catch(e) {
+      console.error('Error saving tripData to localStorage:', e);
     }
   }
 
   function loadItineraryFromLocal() {
-    const saved = localStorage.getItem('iceland_2026_editorial_days');
-    if (saved && saved.includes('day-card')) {
-      const dayList = document.getElementById('dayList');
-      if (dayList) {
-        dayList.innerHTML = saved;
+    try {
+      const saved = localStorage.getItem(`memoir-trip-data-${tripId}`);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (parsed && parsed.days && parsed.days.length > 0) {
+          tripData = parsed;
+        }
       }
+    } catch(e) {
+      console.error('Error loading tripData from localStorage:', e);
+    }
+  }
     }
   }
 
   document.addEventListener('DOMContentLoaded', () => {
+    loadItineraryFromLocal();
     renderDays();
 
     const deleteThisTripBtn = document.getElementById('delete-this-trip-btn');

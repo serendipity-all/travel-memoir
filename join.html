@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>加入旅行 | Travel Memoir</title>
+  <title>加入旅行 | Travel Compass</title>
   <meta name="description" content="你已被邀請加入一段旅行回憶錄。" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -255,7 +255,7 @@
 
       <div class="join-brand">
         <span class="join-brand-mark">◒</span>
-        TRAVEL MEMOIR
+        TRAVEL COMPASS
       </div>
 
       <!-- Loading state -->
@@ -353,7 +353,7 @@
 
   <script>
   /* ============================================================
-     TRAVEL MEMOIR — JOIN PAGE
+     TRAVEL COMPASS — JOIN PAGE
      ============================================================ */
   const firebaseConfig = {
     apiKey: "AIzaSyALQhQzhnkj-UOmRZGVQKMKqkW0DecwE3s",
@@ -446,7 +446,7 @@
   }
 
   function populateInviteView() {
-    document.title = `加入「${tripInfo.title}」| Travel Memoir`;
+    document.title = `加入「${tripInfo.title}」| Travel Compass`;
 
     document.getElementById('inviteTripName').textContent = tripInfo.title || '旅行行程';
     document.getElementById('inviteDestination').textContent = tripInfo.destination || '—';

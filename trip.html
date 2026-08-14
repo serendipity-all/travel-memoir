@@ -485,6 +485,63 @@
      ICELAND 2026 - EDITORIAL INTERACTIVE LOGIC & CLOUD SYNC
      ========================================================================== */
 
+  // Dynamic Trip Initialization (iceland-2026 vs. Custom Clean Projects)
+  const urlParams = new URLSearchParams(window.location.search);
+  const tripId = urlParams.get('id') || 'iceland-2026';
+  
+  let tripData;
+
+  const storedTripsRaw = localStorage.getItem('memoir-custom-trips');
+  const storedTrips = storedTripsRaw ? JSON.parse(storedTripsRaw) : [];
+  const matchedCustomMeta = storedTrips.find(t => t.id === tripId);
+
+  const savedTripDetails = localStorage.getItem(`memoir-trip-data-${tripId}`);
+
+  if (savedTripDetails) {
+    try {
+      tripData = JSON.parse(savedTripDetails);
+    } catch(e) {
+      tripData = null;
+    }
+  }
+
+  if (!tripData) {
+    if (tripId === 'iceland-2026') {
+      tripData = icelandData;
+    } else {
+      // 100% CLEAN SLATE FOR CUSTOM NEW PROJECT! ZERO ICELAND SPOTS!
+      const title = matchedCustomMeta ? (matchedCustomMeta.title || matchedCustomMeta.name) : '新旅遊專案';
+      const dest = matchedCustomMeta ? matchedCustomMeta.dest : '自訂目的地';
+      const dates = matchedCustomMeta ? matchedCustomMeta.dates : '2026/09/01 – 09/05';
+      const coverImg = matchedCustomMeta ? (matchedCustomMeta.coverImg || matchedCustomMeta.cover) : 'images/seljalandsfoss.jpg';
+
+      tripData = {
+        id: tripId,
+        title: title,
+        dest: dest,
+        start: '2026-09-01',
+        end: '2026-09-05',
+        coverImg: coverImg,
+        days: [
+          {
+            day: 1,
+            date: '2026-09-01',
+            label: '第 1 天行程',
+            intensity: 'easy',
+            tags: ['nature'],
+            summary: '點擊編輯這天的行程安排...開啟「⚙️ 設定 → ✏️ 編輯模式」即可使用智慧搜尋加入第一個景點！',
+            wear: '舒適旅遊穿著',
+            tips: ['點擊「+ 新增景點」即可透過智慧搜尋帶入照片與座標！'],
+            spots: []
+          }
+        ],
+        prep: { admin:[], bookings:[], gear:[], tech:[] },
+        packing: { carry:[], cabin:[], checked:[], shared:[] }
+      };
+    }
+  }
+
+
   // Option A: Smart Spot Search & Match Global Functions
   let activeTargetDay = null;
 
@@ -1536,19 +1593,40 @@
 
   function saveItineraryToLocal() {
     try {
-      localStorage.setItem(`memoir-trip-${tripId}`, JSON.stringify(tripData));
+      if (tripId === 'iceland-2026') {
+        const dayList = document.getElementById('dayList');
+        if (dayList && dayList.innerHTML.includes('day-card')) {
+          localStorage.setItem('iceland_2026_editorial_days', dayList.innerHTML);
+        }
+      }
+      localStorage.setItem(`memoir-trip-data-${tripId}`, JSON.stringify(tripData));
     } catch(e) {
-      console.error('Error saving tripData:', e);
+      console.error('Error saving itinerary:', e);
     }
   }
 
   function loadItineraryFromLocal() {
-    const saved = localStorage.getItem('iceland_2026_editorial_days');
-    if (saved && saved.includes('day-card')) {
-      const dayList = document.getElementById('dayList');
-      if (dayList) {
-        dayList.innerHTML = saved;
+    if (tripId === 'iceland-2026') {
+      const saved = localStorage.getItem('iceland_2026_editorial_days');
+      if (saved && saved.includes('day-card')) {
+        const dayList = document.getElementById('dayList');
+        if (dayList) {
+          dayList.innerHTML = saved;
+          return;
+        }
       }
+    }
+
+    const savedData = localStorage.getItem(`memoir-trip-data-${tripId}`);
+    if (savedData) {
+      try {
+        const parsed = JSON.parse(savedData);
+        if (parsed && parsed.days) {
+          tripData = parsed;
+        }
+      } catch(e) {}
+    }
+  }
     }
   }
 

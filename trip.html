@@ -512,6 +512,193 @@
     if (spotSearchModal) spotSearchModal.classList.remove('active');
   }
 
+  function initSpotSearchModal() {
+    const spotSearchModal = document.getElementById('spot-search-modal');
+    const spotSearchInput = document.getElementById('spot-search-input');
+    const spotSearchActionBtn = document.getElementById('spot-search-action-btn');
+    const spotSearchStatus = document.getElementById('spot-search-status');
+    const spotSearchResults = document.getElementById('spot-search-results');
+    const closeSpotSearchBtn = document.getElementById('close-spot-search-btn');
+    const fallbackCustomBtn = document.getElementById('fallback-custom-btn');
+    const fallbackMapPinBtn = document.getElementById('fallback-map-pin-btn');
+
+    if (closeSpotSearchBtn) closeSpotSearchBtn.onclick = closeSpotSearchModal;
+    if (spotSearchModal) {
+      spotSearchModal.onclick = (e) => {
+        if (e.target === spotSearchModal) closeSpotSearchModal();
+      };
+    }
+
+    const executeSearch = () => {
+      const query = spotSearchInput.value.trim();
+      if (!query) {
+        spotSearchStatus.style.display = 'block';
+        spotSearchStatus.innerHTML = '⚠️ 請先輸入要搜尋的景點關鍵字！';
+        return;
+      }
+
+      spotSearchStatus.style.display = 'block';
+      spotSearchStatus.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> 正在搜尋與比對「${query}」的照片與地圖座標...`;
+      spotSearchResults.innerHTML = '';
+
+      const destContext = (tripData && tripData.dest) ? tripData.dest : 'Iceland';
+      const searchUrl = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query + ' ' + destContext)}&limit=5&accept-language=zh-TW,en`;
+
+      fetch(searchUrl)
+        .then(r => r.json())
+        .then(async data => {
+          if (!data || data.length === 0) {
+            spotSearchStatus.innerHTML = `⚠️ 未能在資料庫中找到「${query}」的精準座標。您可以選擇下方備案以手動建立或在地圖上記標：`;
+            return;
+          }
+
+          spotSearchStatus.style.display = 'none';
+
+          for (const item of data) {
+            const lat = parseFloat(item.lat);
+            const lng = parseFloat(item.lon);
+            const displayName = item.display_name.split(',')[0] || query;
+            const type = item.type || 'nature';
+
+            let thumb = 'images/kirkjufell.jpg';
+            try {
+              const wikiRes = await fetch(`https://en.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(query)}`);
+              if (wikiRes.ok) {
+                const wikiData = await wikiRes.json();
+                if (wikiData.originalimage?.source || wikiData.thumbnail?.source) {
+                  thumb = wikiData.originalimage?.source || wikiData.thumbnail?.source;
+                }
+              }
+            } catch(e) {}
+
+            const card = document.createElement('div');
+            card.className = 'search-result-item';
+            card.innerHTML = `
+              <img src="${thumb}" class="search-result-thumb" onerror="this.src='images/kirkjufell.jpg'">
+              <div class="search-result-info">
+                <div class="search-result-title">${displayName}</div>
+                <div class="search-result-meta">${item.display_name}</div>
+              </div>
+              <div class="search-result-action"><i class="fa-solid fa-plus"></i> 加入行程</div>
+            `;
+
+            card.onclick = () => {
+              if (activeTargetDay) {
+                const newSpot = {
+                  id: `spot-new-${Date.now()}`,
+                  name: displayName,
+                  en: query,
+                  type: type.includes('city') ? 'city' : type.includes('spa') ? 'spa' : 'nature',
+                  lat: lat,
+                  lng: lng,
+                  img: thumb,
+                  wiki: query,
+                  highlight: '點擊編輯景點特色說明...',
+                  gear: '防風防水外套、好走的鞋',
+                  caution: '請留意現場天氣與安全指示。'
+                };
+                activeTargetDay.spots.push(newSpot);
+                saveItineraryToLocal();
+                renderDays();
+                if (map) initMap();
+                closeSpotSearchModal();
+                alert(`✅ 已成功將「${displayName}」加入 Day ${activeTargetDay.day} 行程與地圖標記！`);
+              }
+            };
+
+            spotSearchResults.appendChild(card);
+          }
+        })
+        .catch(err => {
+          spotSearchStatus.innerHTML = `⚠️ 搜尋發生錯誤，請選擇下方備案手動建立。`;
+        });
+    };
+
+    if (spotSearchActionBtn) spotSearchActionBtn.onclick = executeSearch;
+    if (spotSearchInput) {
+      spotSearchInput.onkeypress = (e) => {
+        if (e.key === 'Enter') executeSearch();
+      };
+    }
+
+    // Fallback 1: Manual Custom Spot
+    if (fallbackCustomBtn) {
+      fallbackCustomBtn.onclick = () => {
+        closeSpotSearchModal();
+        if (!activeTargetDay) return;
+        const spotName = prompt('請輸入新增景點名稱（例：司機私房熱湯店）：');
+        if (spotName && spotName.trim()) {
+          const newSpot = {
+            id: `spot-new-${Date.now()}`,
+            name: spotName.trim(),
+            en: spotName.trim(),
+            type: 'nature',
+            lat: activeTargetDay.spots[0]?.lat || 64.14,
+            lng: activeTargetDay.spots[0]?.lng || -21.92,
+            img: 'images/kirkjufell.jpg',
+            wiki: '',
+            highlight: '點擊編輯景點特色說明...',
+            gear: '防風防水外套、好走的鞋',
+            caution: '請留意現場天氣與安全指示。'
+          };
+          activeTargetDay.spots.push(newSpot);
+          saveItineraryToLocal();
+          renderDays();
+          if (map) initMap();
+        }
+      };
+    }
+
+    // Fallback 2: Map Pinning Mode
+    if (fallbackMapPinBtn) {
+      fallbackMapPinBtn.onclick = () => {
+        closeSpotSearchModal();
+        if (!activeTargetDay) return;
+
+        document.getElementById('route')?.scrollIntoView({ behavior: 'smooth' });
+
+        const banner = document.createElement('div');
+        banner.className = 'map-pin-banner';
+        banner.innerHTML = `<i class="fa-solid fa-location-dot"></i> 📍 請在地圖上點擊要標記景點的位置... <button style="background:transparent;border:0;color:white;cursor:pointer;margin-left:8px;" id="cancelPinBtn">✕ 取消</button>`;
+        document.body.appendChild(banner);
+
+        document.getElementById('cancelPinBtn').onclick = () => banner.remove();
+
+        if (map) {
+          map.once('click', (e) => {
+            banner.remove();
+            const lat = e.latlng.lat;
+            const lng = e.latlng.lng;
+
+            const spotName = prompt(`已取得座標 (${lat.toFixed(4)}, ${lng.toFixed(4)})！請輸入此景點名稱：`);
+            if (spotName && spotName.trim()) {
+              const newSpot = {
+                id: `spot-new-${Date.now()}`,
+                name: spotName.trim(),
+                en: spotName.trim(),
+                type: 'nature',
+                lat: lat,
+                lng: lng,
+                img: 'images/kirkjufell.jpg',
+                wiki: '',
+                highlight: '點擊編輯景點特色說明...',
+                gear: '防風防水外套、好走的鞋',
+                caution: '請留意現場天氣與安全指示。'
+              };
+              activeTargetDay.spots.push(newSpot);
+              saveItineraryToLocal();
+              renderDays();
+              initMap();
+              alert(`✅ 已成功在地圖指定位置建立「${spotName.trim()}」！`);
+            }
+          });
+        }
+      };
+    }
+  }
+
+  
+
 
   const dayColors = ['#ff5a36','#f89e3d','#c36ff0','#5b93e5','#2fae84','#6e8d4a','#cf6b8b','#7b6fe0','#e0b438','#2f9ea4','#71808a'];
   let map, markerLayer, routeLine;
@@ -1240,6 +1427,7 @@
     initMap();
     setupFilters();
     setupMisc();
+    initSpotSearchModal();
 
     // Settings Dropdown Toggle Action
     const settingsMenuBtn = document.getElementById('settingsMenuBtn');

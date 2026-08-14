@@ -512,6 +512,81 @@
     if (spotSearchModal) spotSearchModal.classList.remove('active');
   }
 
+  
+  // Smart Multi-Source Photo Matcher (Local Map + Zh Wiki + En Wiki + Commons)
+  async function fetchWikiPhoto(query, englishName = '') {
+    const localMap = {
+      '藍湖': 'images/blue_lagoon.jpg', 'Blue Lagoon': 'images/blue_lagoon.jpg',
+      '哈爾格林姆': 'images/hallgrimskirkja.jpg', 'Hallgrímskirkja': 'images/hallgrimskirkja.jpg',
+      '水簾洞': 'images/seljalandsfoss.jpg', 'Seljalandsfoss': 'images/seljalandsfoss.jpg',
+      '彩虹瀑布': 'images/skogafoss.jpg', 'Skógafoss': 'images/skogafoss.jpg',
+      '黑沙灘': 'images/reynisfjara.jpg', 'Reynisfjara': 'images/reynisfjara.jpg',
+      '冰河湖': 'images/jokulsarlon.jpg', 'Jökulsárlón': 'images/jokulsarlon.jpg',
+      '鑽石沙灘': 'images/diamond_beach.jpg', 'Diamond Beach': 'images/diamond_beach.jpg',
+      '阿克雷里': 'images/akureyri.jpg', 'Akureyri': 'images/akureyri.jpg',
+      '眾神瀑布': 'images/godafoss.jpg', 'Goðafoss': 'images/godafoss.jpg',
+      '黛提瀑布': 'images/dettifoss.jpg', 'Dettifoss': 'images/dettifoss.jpg',
+      '米湖': 'images/hverir.jpg', 'Hverir': 'images/hverir.jpg',
+      '賞鯨': 'images/whale_watching.jpg', 'Whale Watching': 'images/whale_watching.jpg',
+      '拉加爾湖': 'images/lagarfljot.jpg', 'Lagarfljót': 'images/lagarfljot.jpg',
+      '塞濟斯菲厄澤': 'images/seydisfjordur.jpg', 'Seyðisfjörður': 'images/seydisfjordur.jpg',
+      '金字塔山': 'images/bulandstindur.jpg', 'Búlandstindur': 'images/bulandstindur.jpg',
+      '太陽航行者': 'images/sun_voyager.jpg', 'Sun Voyager': 'images/sun_voyager.jpg',
+      'Harpa': 'images/harpa.jpg', '音樂廳': 'images/harpa.jpg',
+      '辛格韋德利': 'images/thingvellir.jpg', 'Þingvellir': 'images/thingvellir.jpg',
+      '間歇泉': 'images/strokkur.jpg', 'Strokkur': 'images/strokkur.jpg',
+      '黃金瀑布': 'images/gullfoss.jpg', 'Gullfoss': 'images/gullfoss.jpg',
+      '火口湖': 'images/kerid.jpg', 'Kerið': 'images/kerid.jpg',
+      '天空之鏡': 'images/sky_lagoon.jpg', 'Sky Lagoon': 'images/sky_lagoon.jpg',
+      '教堂山': 'images/kirkjufell.jpg', 'Kirkjufell': 'images/kirkjufell.jpg',
+      'Krafla': 'images/krafla_viti.jpg', 'Viti': 'images/krafla_viti.jpg'
+    };
+
+    for (const [k, v] of Object.entries(localMap)) {
+      if (query.includes(k) || (englishName && englishName.toLowerCase().includes(k.toLowerCase()))) {
+        return v;
+      }
+    }
+
+    try {
+      const q1 = encodeURIComponent(query);
+      const r1 = await fetch(`https://zh.wikipedia.org/api/rest_v1/page/summary/${q1}`);
+      if (r1.ok) {
+        const d1 = await r1.json();
+        const img1 = d1.originalimage?.source || d1.thumbnail?.source;
+        if (img1) return img1;
+      }
+    } catch(e) {}
+
+    const targetEn = englishName || query;
+    try {
+      const q2 = encodeURIComponent(targetEn);
+      const r2 = await fetch(`https://en.wikipedia.org/api/rest_v1/page/summary/${q2}`);
+      if (r2.ok) {
+        const d2 = await r2.json();
+        const img2 = d2.originalimage?.source || d2.thumbnail?.source;
+        if (img2) return img2;
+      }
+    } catch(e) {}
+
+    try {
+      const commonsUrl = `https://commons.wikimedia.org/w/api.php?action=query&generator=search&gsearch=${encodeURIComponent(query + ' Iceland')}&prop=imageinfo&iiprop=url&format=json&origin=*`;
+      const r3 = await fetch(commonsUrl);
+      if (r3.ok) {
+        const d3 = await r3.json();
+        const pages = d3.query?.pages;
+        if (pages) {
+          for (const p of Object.values(pages)) {
+            const img3 = p.imageinfo?.[0]?.url;
+            if (img3 && (img3.endsWith('.jpg') || img3.endsWith('.png') || img3.endsWith('.jpeg'))) return img3;
+          }
+        }
+      }
+    } catch(e) {}
+
+    return 'images/kirkjufell.jpg';
+  }
+
   function initSpotSearchModal() {
     const spotSearchModal = document.getElementById('spot-search-modal');
     const spotSearchInput = document.getElementById('spot-search-input');
@@ -560,16 +635,7 @@
             const displayName = item.display_name.split(',')[0] || query;
             const type = item.type || 'nature';
 
-            let thumb = 'images/kirkjufell.jpg';
-            try {
-              const wikiRes = await fetch(`https://en.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(query)}`);
-              if (wikiRes.ok) {
-                const wikiData = await wikiRes.json();
-                if (wikiData.originalimage?.source || wikiData.thumbnail?.source) {
-                  thumb = wikiData.originalimage?.source || wikiData.thumbnail?.source;
-                }
-              }
-            } catch(e) {}
+            const thumb = await fetchWikiPhoto(displayName, item.display_name);
 
             const card = document.createElement('div');
             card.className = 'search-result-item';
@@ -1323,23 +1389,18 @@
       if (e.target.closest('.btn-wiki-match')) {
         const spotCardEl = e.target.closest('.spot-card');
         const spotTitle = spotCardEl.querySelector('h4').innerText.trim();
-        alert(`正連線為您自動匹配維基百科【${spotTitle}】條目官方原圖...`);
-        const query = spotTitle.split(' ')[0];
-        fetch(`https://en.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(query)}`)
-          .then(r => r.json())
-          .then(data => {
-            const src = data.originalimage?.source || data.thumbnail?.source;
-            if (src) {
-              const img = spotCardEl.querySelector('img');
-              img.src = src;
-              img.hidden = false;
-              alert(`✅ 已成功為「${spotTitle}」更新維基百科官方原圖！`);
-              saveItineraryToLocal();
-            } else {
-              alert(`⚠️ 維基百科未找到「${spotTitle}」的封面照片，請手動更換照片。`);
-            }
-          })
-          .catch(err => alert(`⚠️ 搜尋失敗：${err}`));
+        alert(`正連線為您自動匹配【${spotTitle}】官方高清景點照片...`);
+        fetchWikiPhoto(spotTitle).then(src => {
+          if (src) {
+            const img = spotCardEl.querySelector('img');
+            img.src = src;
+            img.hidden = false;
+            alert(`✅ 已成功為「${spotTitle}」自動匹配並更新照片！`);
+            saveItineraryToLocal();
+          } else {
+            alert(`⚠️ 未找到「${spotTitle}」的匹配照片，請手動上傳。`);
+          }
+        });
       }
       if (e.target.closest('.btn-change-photo')) {
         const spotCardEl = e.target.closest('.spot-card');

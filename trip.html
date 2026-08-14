@@ -514,75 +514,87 @@
 
   
   // Smart Multi-Source Photo Matcher (Local Map + Zh Wiki + En Wiki + Commons)
+  // Smart Multi-Source Photo Matcher with Wikipedia OpenSearch
   async function fetchWikiPhoto(query, englishName = '') {
+    const cleanQuery = (query || '').split(',')[0].trim();
+    const cleanEn = (englishName || '').split(',')[0].trim();
+
     const localMap = {
-      '藍湖': 'images/blue_lagoon.jpg', 'Blue Lagoon': 'images/blue_lagoon.jpg',
-      '哈爾格林姆': 'images/hallgrimskirkja.jpg', 'Hallgrímskirkja': 'images/hallgrimskirkja.jpg',
-      '水簾洞': 'images/seljalandsfoss.jpg', 'Seljalandsfoss': 'images/seljalandsfoss.jpg',
-      '彩虹瀑布': 'images/skogafoss.jpg', 'Skógafoss': 'images/skogafoss.jpg',
-      '黑沙灘': 'images/reynisfjara.jpg', 'Reynisfjara': 'images/reynisfjara.jpg',
-      '冰河湖': 'images/jokulsarlon.jpg', 'Jökulsárlón': 'images/jokulsarlon.jpg',
-      '鑽石沙灘': 'images/diamond_beach.jpg', 'Diamond Beach': 'images/diamond_beach.jpg',
-      '阿克雷里': 'images/akureyri.jpg', 'Akureyri': 'images/akureyri.jpg',
-      '眾神瀑布': 'images/godafoss.jpg', 'Goðafoss': 'images/godafoss.jpg',
-      '黛提瀑布': 'images/dettifoss.jpg', 'Dettifoss': 'images/dettifoss.jpg',
-      '米湖': 'images/hverir.jpg', 'Hverir': 'images/hverir.jpg',
-      '賞鯨': 'images/whale_watching.jpg', 'Whale Watching': 'images/whale_watching.jpg',
-      '拉加爾湖': 'images/lagarfljot.jpg', 'Lagarfljót': 'images/lagarfljot.jpg',
-      '塞濟斯菲厄澤': 'images/seydisfjordur.jpg', 'Seyðisfjörður': 'images/seydisfjordur.jpg',
-      '金字塔山': 'images/bulandstindur.jpg', 'Búlandstindur': 'images/bulandstindur.jpg',
-      '太陽航行者': 'images/sun_voyager.jpg', 'Sun Voyager': 'images/sun_voyager.jpg',
-      'Harpa': 'images/harpa.jpg', '音樂廳': 'images/harpa.jpg',
-      '辛格韋德利': 'images/thingvellir.jpg', 'Þingvellir': 'images/thingvellir.jpg',
-      '間歇泉': 'images/strokkur.jpg', 'Strokkur': 'images/strokkur.jpg',
-      '黃金瀑布': 'images/gullfoss.jpg', 'Gullfoss': 'images/gullfoss.jpg',
-      '火口湖': 'images/kerid.jpg', 'Kerið': 'images/kerid.jpg',
-      '天空之鏡': 'images/sky_lagoon.jpg', 'Sky Lagoon': 'images/sky_lagoon.jpg',
-      '教堂山': 'images/kirkjufell.jpg', 'Kirkjufell': 'images/kirkjufell.jpg',
-      'Krafla': 'images/krafla_viti.jpg', 'Viti': 'images/krafla_viti.jpg'
+      '藍湖': 'images/blue_lagoon.jpg', 'blue lagoon': 'images/blue_lagoon.jpg',
+      '哈爾格林姆': 'images/hallgrimskirkja.jpg', 'hallgrímskirkja': 'images/hallgrimskirkja.jpg',
+      '水簾洞': 'images/seljalandsfoss.jpg', 'seljalandsfoss': 'images/seljalandsfoss.jpg',
+      '彩虹瀑布': 'images/skogafoss.jpg', 'skógafoss': 'images/skogafoss.jpg', 'skogafoss': 'images/skogafoss.jpg',
+      '黑沙灘': 'images/reynisfjara.jpg', 'reynisfjara': 'images/reynisfjara.jpg',
+      '冰河湖': 'images/jokulsarlon.jpg', 'jökulsárlón': 'images/jokulsarlon.jpg', 'jokulsarlon': 'images/jokulsarlon.jpg',
+      '鑽石沙灘': 'images/diamond_beach.jpg', 'diamond beach': 'images/diamond_beach.jpg',
+      '阿克雷里': 'images/akureyri.jpg', 'akureyri': 'images/akureyri.jpg',
+      '眾神瀑布': 'images/godafoss.jpg', 'goðafoss': 'images/godafoss.jpg', 'godafoss': 'images/godafoss.jpg',
+      '黛提瀑布': 'images/dettifoss.jpg', 'dettifoss': 'images/dettifoss.jpg',
+      '米湖': 'images/hverir.jpg', 'hverir': 'images/hverir.jpg', 'mývatn': 'images/hverir.jpg',
+      '賞鯨': 'images/whale_watching.jpg', 'whale watching': 'images/whale_watching.jpg',
+      '拉加爾湖': 'images/lagarfljot.jpg', 'lagarfljót': 'images/lagarfljot.jpg',
+      '塞濟斯菲厄澤': 'images/seydisfjordur.jpg', 'seyðisfjörður': 'images/seydisfjordur.jpg',
+      '金字塔山': 'images/bulandstindur.jpg', 'búlandstindur': 'images/bulandstindur.jpg',
+      '太陽航行者': 'images/sun_voyager.jpg', 'sun voyager': 'images/sun_voyager.jpg',
+      'harpa': 'images/harpa.jpg', '音樂廳': 'images/harpa.jpg',
+      '辛格韋德利': 'images/thingvellir.jpg', 'þingvellir': 'images/thingvellir.jpg', 'thingvellir': 'images/thingvellir.jpg',
+      '間歇泉': 'images/strokkur.jpg', 'strokkur': 'images/strokkur.jpg', 'geysir': 'images/strokkur.jpg',
+      '黃金瀑布': 'images/gullfoss.jpg', 'gullfoss': 'images/gullfoss.jpg',
+      '火口湖': 'images/kerid.jpg', 'kerið': 'images/kerid.jpg', 'kerid': 'images/kerid.jpg',
+      '天空之鏡': 'images/sky_lagoon.jpg', 'sky lagoon': 'images/sky_lagoon.jpg',
+      '教堂山': 'images/kirkjufell.jpg', 'kirkjufell': 'images/kirkjufell.jpg',
+      'krafla': 'images/krafla_viti.jpg', 'viti': 'images/krafla_viti.jpg',
+      'fjadrargljufur': 'images/fjadrargljufur.jpg', 'fjaðrárgljúfur': 'images/fjadrargljufur.jpg', '羽毛峽谷': 'images/fjadrargljufur.jpg'
     };
 
+    const targetText = (cleanQuery + ' ' + cleanEn).toLowerCase();
     for (const [k, v] of Object.entries(localMap)) {
-      if (query.includes(k) || (englishName && englishName.toLowerCase().includes(k.toLowerCase()))) {
+      if (targetText.includes(k.toLowerCase())) {
         return v;
       }
     }
 
-    try {
-      const q1 = encodeURIComponent(query);
-      const r1 = await fetch(`https://zh.wikipedia.org/api/rest_v1/page/summary/${q1}`);
-      if (r1.ok) {
-        const d1 = await r1.json();
-        const img1 = d1.originalimage?.source || d1.thumbnail?.source;
-        if (img1) return img1;
-      }
-    } catch(e) {}
+    const searchTerms = [cleanEn, cleanQuery].filter(Boolean);
 
-    const targetEn = englishName || query;
-    try {
-      const q2 = encodeURIComponent(targetEn);
-      const r2 = await fetch(`https://en.wikipedia.org/api/rest_v1/page/summary/${q2}`);
-      if (r2.ok) {
-        const d2 = await r2.json();
-        const img2 = d2.originalimage?.source || d2.thumbnail?.source;
-        if (img2) return img2;
-      }
-    } catch(e) {}
-
-    try {
-      const commonsUrl = `https://commons.wikimedia.org/w/api.php?action=query&generator=search&gsearch=${encodeURIComponent(query + ' Iceland')}&prop=imageinfo&iiprop=url&format=json&origin=*`;
-      const r3 = await fetch(commonsUrl);
-      if (r3.ok) {
-        const d3 = await r3.json();
-        const pages = d3.query?.pages;
-        if (pages) {
-          for (const p of Object.values(pages)) {
-            const img3 = p.imageinfo?.[0]?.url;
-            if (img3 && (img3.endsWith('.jpg') || img3.endsWith('.png') || img3.endsWith('.jpeg'))) return img3;
+    for (const term of searchTerms) {
+      try {
+        const openUrl = `https://en.wikipedia.org/w/api.php?action=opensearch&search=${encodeURIComponent(term)}&limit=1&format=json&origin=*`;
+        const rOpen = await fetch(openUrl);
+        if (rOpen.ok) {
+          const dOpen = await rOpen.json();
+          const foundTitle = dOpen[1]?.[0];
+          if (foundTitle) {
+            const sumUrl = `https://en.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(foundTitle)}`;
+            const rSum = await fetch(sumUrl);
+            if (rSum.ok) {
+              const dSum = await rSum.json();
+              const img = dSum.originalimage?.source || dSum.thumbnail?.source;
+              if (img) return img;
+            }
           }
         }
-      }
-    } catch(e) {}
+      } catch(e) {}
+    }
+
+    for (const term of searchTerms) {
+      try {
+        const openUrlZh = `https://zh.wikipedia.org/w/api.php?action=opensearch&search=${encodeURIComponent(term)}&limit=1&format=json&origin=*`;
+        const rOpenZh = await fetch(openUrlZh);
+        if (rOpenZh.ok) {
+          const dOpenZh = await rOpenZh.json();
+          const foundTitleZh = dOpenZh[1]?.[0];
+          if (foundTitleZh) {
+            const sumUrlZh = `https://zh.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(foundTitleZh)}`;
+            const rSumZh = await fetch(sumUrlZh);
+            if (rSumZh.ok) {
+              const dSumZh = await rSumZh.json();
+              const imgZh = dSumZh.originalimage?.source || dSumZh.thumbnail?.source;
+              if (imgZh) return imgZh;
+            }
+          }
+        }
+      } catch(e) {}
+    }
 
     return 'images/kirkjufell.jpg';
   }
@@ -635,7 +647,8 @@
             const displayName = item.display_name.split(',')[0] || query;
             const type = item.type || 'nature';
 
-            const thumb = await fetchWikiPhoto(displayName, item.display_name);
+            const cleanEnName = item.display_name.split(',')[0].trim();
+            const thumb = await fetchWikiPhoto(displayName, cleanEnName);
 
             const card = document.createElement('div');
             card.className = 'search-result-item';

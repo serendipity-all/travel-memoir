@@ -616,7 +616,7 @@
       };
     }
 
-    const executeSearch = () => {
+    const executeSearch = async () => {
       const query = spotSearchInput.value.trim();
       if (!query) {
         spotSearchStatus.style.display = 'block';
@@ -625,72 +625,146 @@
       }
 
       spotSearchStatus.style.display = 'block';
-      spotSearchStatus.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> 正在搜尋與比對「${query}」的照片與地圖座標...`;
+      spotSearchStatus.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> 正在雙引擎搜尋「${query}」之精準座標、簡介與照片...`;
       spotSearchResults.innerHTML = '';
 
-      const destContext = (tripData && tripData.dest) ? tripData.dest : 'Iceland';
-      const searchUrl = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query + ' ' + destContext)}&limit=5&accept-language=zh-TW,en`;
+      const destContext = (tripData && tripData.dest && tripData.dest !== '自訂目的地') ? tripData.dest : '';
+      const candidateList = [];
 
-      fetch(searchUrl)
-        .then(r => r.json())
-        .then(async data => {
-          if (!data || data.length === 0) {
-            spotSearchStatus.innerHTML = `⚠️ 未能在資料庫中找到「${query}」的精準座標。您可以選擇下方備案以手動建立或在地圖上記標：`;
-            return;
+      // 1. Engine 1: Wikipedia Search & Geo API (Chinese)
+      try {
+        const wikiUrl = `https://zh.wikipedia.org/w/api.php?action=query&generator=search&gsrsearch=${encodeURIComponent(query)}&gsrlimit=4&prop=coordinates|pageimages|extracts&exintro=1&explaintext=1&piprop=thumbnail&pithumbsize=800&format=json&origin=*`;
+        const rWiki = await fetch(wikiUrl);
+        if (rWiki.ok) {
+          const dWiki = await rWiki.json();
+          const pages = dWiki.query?.pages;
+          if (pages) {
+            for (const p of Object.values(pages)) {
+              const title = p.title;
+              const coords = p.coordinates?.[0];
+              const thumb = p.thumbnail?.source || await fetchWikiPhoto(title, title);
+              const summary = p.extract ? p.extract.slice(0, 48) + '...' : '維基百科景點資訊';
+              candidateList.push({
+                name: title,
+                en: title,
+                lat: coords ? coords.lat : (activeTargetDay?.spots[0]?.lat || 64.14),
+                lng: coords ? coords.lon : (activeTargetDay?.spots[0]?.lng || -21.92),
+                img: thumb,
+                meta: summary,
+                type: 'nature'
+              });
+            }
           }
+        }
+      } catch(e) {}
 
-          spotSearchStatus.style.display = 'none';
+      // 2. Engine 2: OpenStreetMap Nominatim Geocoding API
+      try {
+        const qStr = destContext ? `${query} ${destContext}` : query;
+        const searchUrl = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(qStr)}&limit=4&accept-language=zh-TW,en`;
+        const rNom = await fetch(searchUrl);
+        if (rNom.ok) {
+          const dNom = await rNom.json();
+          if (dNom && dNom.length > 0) {
+            for (const item of dNom) {
+              const displayName = item.display_name.split(',')[0] || query;
+              const cleanEn = item.display_name.split(',')[0].trim();
+              const thumb = await fetchWikiPhoto(displayName, cleanEn);
+              candidateList.push({
+                name: displayName,
+                en: cleanEn,
+                lat: parseFloat(item.lat),
+                lng: parseFloat(item.lon),
+                img: thumb,
+                meta: item.display_name,
+                type: item.type || 'nature'
+              });
+            }
+          }
+        }
+      } catch(e) {}
 
-          for (const item of data) {
-            const lat = parseFloat(item.lat);
-            const lng = parseFloat(item.lon);
-            const displayName = item.display_name.split(',')[0] || query;
-            const type = item.type || 'nature';
+      // Fallback Engine 3: Nominatim Raw Query if still few results
+      if (candidateList.length < 2) {
+        try {
+          const rawUrl = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&limit=4&accept-language=zh-TW,en`;
+          const rRaw = await fetch(rawUrl);
+          if (rRaw.ok) {
+            const dRaw = await rRaw.json();
+            for (const item of dRaw) {
+              const displayName = item.display_name.split(',')[0] || query;
+              const cleanEn = item.display_name.split(',')[0].trim();
+              const thumb = await fetchWikiPhoto(displayName, cleanEn);
+              candidateList.push({
+                name: displayName,
+                en: cleanEn,
+                lat: parseFloat(item.lat),
+                lng: parseFloat(item.lon),
+                img: thumb,
+                meta: item.display_name,
+                type: item.type || 'nature'
+              });
+            }
+          }
+        } catch(e) {}
+      }
 
-            const cleanEnName = item.display_name.split(',')[0].trim();
-            const thumb = await fetchWikiPhoto(displayName, cleanEnName);
+      // Deduplicate results by name
+      const uniqueList = [];
+      const seenNames = new Set();
+      for (const item of candidateList) {
+        if (!seenNames.has(item.name)) {
+          seenNames.add(item.name);
+          uniqueList.push(item);
+        }
+      }
 
-            const card = document.createElement('div');
-            card.className = 'search-result-item';
-            card.innerHTML = `
-              <img src="${thumb}" class="search-result-thumb" onerror="this.src='images/kirkjufell.jpg'">
-              <div class="search-result-info">
-                <div class="search-result-title">${displayName}</div>
-                <div class="search-result-meta">${item.display_name}</div>
-              </div>
-              <div class="search-result-action"><i class="fa-solid fa-plus"></i> 加入行程</div>
-            `;
+      if (uniqueList.length === 0) {
+        spotSearchStatus.style.display = 'block';
+        spotSearchStatus.innerHTML = `⚠️ 未能在全球資料庫中找不到「${query}」的記錄。您可以選擇下方備案以手動建立或在地圖上記標：`;
+        return;
+      }
 
-            card.onclick = () => {
-              if (activeTargetDay) {
-                const newSpot = {
-                  id: `spot-new-${Date.now()}`,
-                  name: displayName,
-                  en: query,
-                  type: type.includes('city') ? 'city' : type.includes('spa') ? 'spa' : 'nature',
-                  lat: lat,
-                  lng: lng,
-                  img: thumb,
-                  wiki: query,
-                  highlight: '點擊編輯景點特色說明...',
-                  gear: '防風防水外套、好走的鞋',
-                  caution: '請留意現場天氣與安全指示。'
-                };
-                activeTargetDay.spots.push(newSpot);
-                saveItineraryToLocal();
-                renderDays();
-                if (map) initMap();
-                closeSpotSearchModal();
-                alert(`✅ 已成功將「${displayName}」加入 Day ${activeTargetDay.day} 行程與地圖標記！`);
-              }
+      spotSearchStatus.style.display = 'none';
+
+      for (const item of uniqueList) {
+        const card = document.createElement('div');
+        card.className = 'search-result-item';
+        card.innerHTML = `
+          <img src="${item.img}" class="search-result-thumb" onerror="this.src='images/kirkjufell.jpg'">
+          <div class="search-result-info">
+            <div class="search-result-title">${item.name}</div>
+            <div class="search-result-meta">${item.meta}</div>
+          </div>
+          <div class="search-result-action"><i class="fa-solid fa-plus"></i> 加入行程</div>
+        `;
+
+        card.onclick = () => {
+          if (activeTargetDay) {
+            const newSpot = {
+              id: `spot-new-${Date.now()}`,
+              name: item.name,
+              en: item.en,
+              type: item.type.includes('city') ? 'city' : item.type.includes('spa') ? 'spa' : 'nature',
+              lat: item.lat,
+              lng: item.lng,
+              img: item.img,
+              wiki: item.name,
+              highlight: item.meta || '點擊編輯景點特色說明...',
+              gear: '防風防水外套、好走的鞋',
+              caution: '請留意現場天氣與安全指示。'
             };
-
-            spotSearchResults.appendChild(card);
+            activeTargetDay.spots.push(newSpot);
+            saveItineraryToLocal();
+            renderDays();
+            if (map) initMap();
+            closeSpotSearchModal();
+            alert(`✅ 已成功將「${item.name}」加入 Day ${activeTargetDay.day} 行程與地圖標記！`);
           }
-        })
-        .catch(err => {
-          spotSearchStatus.innerHTML = `⚠️ 搜尋發生錯誤，請選擇下方備案手動建立。`;
-        });
+        };
+
+        spotSearchResults.appendChild(card);
+      }
     };
 
     if (spotSearchActionBtn) spotSearchActionBtn.onclick = executeSearch;

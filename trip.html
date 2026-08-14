@@ -499,17 +499,19 @@
 
   if (savedTripDetails) {
     try {
-      tripData = JSON.parse(savedTripDetails);
+      const parsed = JSON.parse(savedTripDetails);
+      if (parsed && parsed.days && parsed.days.length > 0 && parsed.days[0].spots) {
+        tripData = parsed;
+      }
     } catch(e) {
       tripData = null;
     }
   }
 
-  if (!tripData) {
+  if (!tripData || !tripData.days || tripData.days.length === 0) {
     if (tripId === 'iceland-2026') {
       tripData = icelandData;
     } else {
-      // 100% CLEAN SLATE FOR CUSTOM NEW PROJECT! ZERO ICELAND SPOTS!
       const title = matchedCustomMeta ? (matchedCustomMeta.title || matchedCustomMeta.name) : '新旅遊專案';
       const dest = matchedCustomMeta ? matchedCustomMeta.dest : '自訂目的地';
       const dates = matchedCustomMeta ? matchedCustomMeta.dates : '2026/09/01 – 09/05';
@@ -538,6 +540,8 @@
         prep: { admin:[], bookings:[], gear:[], tech:[] },
         packing: { carry:[], cabin:[], checked:[], shared:[] }
       };
+    }
+  };
     }
   }
 
@@ -1460,6 +1464,9 @@
       if (confirm('確定要清理瀏覽器快取，重新載入預設 11 天完整行程與照片嗎？')) {
         localStorage.removeItem('iceland_2026_editorial_days');
         localStorage.removeItem('iceland_2026_edited_itinerary');
+        localStorage.removeItem('memoir-trip-data-iceland-2026');
+        localStorage.removeItem(`memoir-trip-${tripId}`);
+        tripData = icelandData;
         renderDays();
 
     const deleteThisTripBtn = document.getElementById('delete-this-trip-btn');

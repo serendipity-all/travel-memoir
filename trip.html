@@ -282,6 +282,33 @@
     </div>
   </div>
 
+  
+  <!-- Option A: Smart Spot Search & Matching Modal -->
+  <div id="spot-search-modal" class="search-modal-overlay">
+    <div class="search-modal-card">
+      <div class="search-modal-header">
+        <h3><i class="fa-solid fa-wand-magic-sparkles" style="color: var(--accent);"></i> 智慧新增景點</h3>
+        <button id="close-spot-search-btn" class="icon-btn">&times;</button>
+      </div>
+
+      <div class="search-bar-wrap">
+        <input type="text" id="spot-search-input" placeholder="輸入景點名稱（例：黑沙灘 / Diamond Beach）...">
+        <button id="spot-search-action-btn" class="btn primary"><i class="fa-solid fa-magnifying-glass"></i> 搜尋</button>
+      </div>
+
+      <div id="spot-search-status" class="search-status" style="display: none;"></div>
+      <div id="spot-search-results" class="search-results-list"></div>
+
+      <div class="search-fallbacks">
+        <div class="search-fallback-title">查無地點或想手動建立？選擇以下方式：</div>
+        <div class="search-fallback-btns">
+          <button id="fallback-custom-btn" class="search-fallback-btn"><i class="fa-solid fa-pen"></i> ✍️ 手動以自訂名稱建立</button>
+          <button id="fallback-map-pin-btn" class="search-fallback-btn"><i class="fa-solid fa-location-dot"></i> 📍 在地圖上記標位置</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- Leaflet JS -->
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
   
@@ -1062,7 +1089,7 @@
 
     // Edit Controls Event Delegation
     document.addEventListener('click', (e) => {
-      // Event delegation for Add Spot button (works reliably across any DOM changes)
+      // Event delegation for Add Spot button -> Open Option A Smart Search Modal
       if (e.target.closest('.btn-add-spot, .add-spot')) {
         const addBtn = e.target.closest('.btn-add-spot, .add-spot');
         const dayCard = addBtn.closest('.day-card');
@@ -1070,27 +1097,7 @@
           const dayNum = Number(dayCard.id.replace('day-', ''));
           const d = tripData.days.find(x => x.day === dayNum);
           if (d) {
-            const spotName = prompt('請輸入新增景點名稱（例如：迪霍拉里海蝕拱門 Dyrhólaey）：');
-            if (spotName && spotName.trim()) {
-              const newSpot = {
-                id: `spot-new-${Date.now()}`,
-                name: spotName.trim(),
-                en: spotName.trim(),
-                type: 'nature',
-                lat: d.spots[0]?.lat || 64.14,
-                lng: d.spots[0]?.lng || -21.92,
-                img: 'images/kirkjufell.jpg',
-                wiki: '',
-                highlight: '點擊此處編輯景點特色與亮點...',
-                gear: '防風防水外套、好走的鞋',
-                caution: '請留意現場天氣與安全指示。'
-              };
-              d.spots.push(newSpot);
-              const sg = dayCard.querySelector('.spot-grid');
-              if (sg) sg.appendChild(spotCard(newSpot, d));
-              saveItineraryToLocal();
-              if (typeof initMap === 'function') initMap();
-            }
+            openSpotSearchModal(d);
           }
         }
       }

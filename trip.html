@@ -594,27 +594,33 @@
 
       card.querySelector('.map-btn').onclick = () => focusDay(d);
       
-      card.querySelector('.btn-add-spot').onclick = () => {
-        const spotName = prompt('請輸入新增景點名稱（例：Dyrhólaey 迪霍拉里海蝕拱門）：');
-        if (spotName && spotName.trim()) {
-          const newSpot = {
-            id: `spot-new-${Date.now()}`,
-            name: spotName.trim(),
-            en: spotName.trim(),
-            type: 'nature',
-            lat: d.spots[0]?.lat || 64.14,
-            lng: d.spots[0]?.lng || -21.92,
-            img: 'images/kirkjufell.jpg',
-            wiki: '',
-            highlight: '點擊此處輸入新增景點特色說明...',
-            gear: '防風防水外套、好走的鞋',
-            caution: '請留意現場天氣與安全指示。'
-          };
-          d.spots.push(newSpot);
-          sg.appendChild(spotCard(newSpot, d));
-          if (typeof saveItineraryToLocal === 'function') saveItineraryToLocal();
-        }
-      };
+      const addSpotBtn = card.querySelector('.btn-add-spot');
+      if (addSpotBtn) {
+        addSpotBtn.onclick = (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          const spotName = prompt('請輸入新增景點名稱（例如：迪霍拉里海蝕拱門 Dyrhólaey）：');
+          if (spotName && spotName.trim()) {
+            const newSpot = {
+              id: `spot-new-${Date.now()}`,
+              name: spotName.trim(),
+              en: spotName.trim(),
+              type: 'nature',
+              lat: d.spots[0]?.lat || 64.14,
+              lng: d.spots[0]?.lng || -21.92,
+              img: 'images/kirkjufell.jpg',
+              wiki: '',
+              highlight: '點擊編輯特色說明...',
+              gear: '防風防水外套、好走的鞋',
+              caution: '請留意現場天氣與安全指示。'
+            };
+            d.spots.push(newSpot);
+            sg.appendChild(spotCard(newSpot, d));
+            if (typeof saveItineraryToLocal === 'function') saveItineraryToLocal();
+            if (typeof initMap === 'function') initMap();
+          }
+        };
+      }
 
       wrap.appendChild(card);
     });

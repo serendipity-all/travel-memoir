@@ -504,8 +504,9 @@ body.edit-active .spot-edit-bar { display: flex; }
 }
 .small-btn:hover { background: var(--ink); color: var(--bg); }
 .small-btn.saved { background: var(--accent); color: white; border-color: var(--accent); }
-.small-btn.add-spot { display: none; background: #e0f2fe; color: #0369a1; border-color: #bae6fd; }
-body.edit-active .small-btn.add-spot { display: block; }
+.small-btn.add-spot { display: flex; align-items: center; justify-content: center; gap: 6px; background: #e0f2fe; color: #0369a1; border-color: #bae6fd; width: 100%; }
+.small-btn.add-spot:hover { background: var(--accent); color: white; border-color: var(--accent); }
+
 
 /* Today Mode */
 .today-section { background: var(--surface); border-block: 1px solid var(--line); }

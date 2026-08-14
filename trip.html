@@ -656,6 +656,36 @@
     return 'images/kirkjufell.jpg';
   }
 
+  // Smart Gear & Caution Auto-Suggester based on spot characteristics
+  function suggestGearAndCaution(name, type = 'nature', summary = '') {
+    const text = (name + ' ' + summary).toLowerCase();
+
+    let gear = '防風外套、好走的鞋';
+    let caution = '請留意現場天候變化與安全指示。';
+
+    if (text.includes('溫泉') || text.includes('spa') || text.includes('lagoon') || text.includes('泡湯') || type === 'spa') {
+      gear = '泳衣/泳褲、防水袋、保暖外套（離池後備用）';
+      caution = '泡湯前後隨時補充水分；頭髮建議抹護髮並避免長時間浸泡礦物水。';
+    } else if (text.includes('瀑布') || text.includes('foss') || text.includes('水簾洞') || text.includes('彩虹') || text.includes('黃金')) {
+      gear = '防風防水衝鋒衣、雨褲、防水登山鞋';
+      caution = '瀑布周圍水霧大且步道濕滑，請留意腳下防滑並保持安全距離。';
+    } else if (text.includes('沙灘') || text.includes('beach') || text.includes('黑沙灘') || text.includes('海岸') || text.includes('峽灣')) {
+      gear = '防風防水外套、防風毛帽、手套、羊毛襪';
+      caution = '海濱風勢強勁；觀浪請遵守警示線，嚴禁靠近邊緣或背對大海。';
+    } else if (text.includes('冰河') || text.includes('冰川') || text.includes('glacier') || text.includes('湖')) {
+      gear = '保暖羽絨外套、防風外殼、毛帽、保暖手套、防滑靴';
+      caution = '冰潟湖周圍體感溫度極低，請注意防風保暖；請勿攀爬浮冰。';
+    } else if (text.includes('火山') || text.includes('地熱') || text.includes('間歇泉') || text.includes('火口') || text.includes('hverir')) {
+      gear = '防風外套、高筒防滑登山鞋';
+      caution = '地熱與噴氣孔水溫極高且地表脆弱，請嚴格遵守指定安全步道。';
+    } else if (text.includes('教堂') || text.includes('市') || text.includes('館') || text.includes('音樂') || text.includes('寺') || text.includes('塔') || type === 'city') {
+      gear = '城市休閒穿著、防風外套、好走的步行鞋';
+      caution = '請留意場館開放時間與現場參觀禮儀；高處觀景請防強風。';
+    }
+
+    return { gear, caution };
+  }
+
   function initSpotSearchModal() {
     const spotSearchModal = document.getElementById('spot-search-modal');
     const spotSearchInput = document.getElementById('spot-search-input');

@@ -15,10 +15,6 @@
   <!-- FontAwesome Icons -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
   
-    <!-- Firebase Compat SDK -->
-  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
   <!-- Leaflet CSS -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="" />
   
@@ -283,23 +279,6 @@
   <!-- Leaflet JS -->
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
   
-  
-  <script>
-    const firebaseConfig = {
-      apiKey: "AIzaSyALQhQzhnkj-UOmRZGVQKMKqkW0DecwE3s",
-      authDomain: "my-travel-book-85243.firebaseapp.com",
-      projectId: "my-travel-book-85243",
-      storageBucket: "my-travel-book-85243.firebasestorage.app",
-      messagingSenderId: "936708966292",
-      appId: "1:936708966292:web:d3c7c08e14f60548cf3181"
-    };
-    if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
-    const db = firebase.firestore();
-
-    const urlParams = new URLSearchParams(window.location.search);
-    const tripId = urlParams.get('id') || 'iceland-2026';
-  </script>
-
   <!-- Embedded Fully Self-Contained Trip Data -->
   <script>
   const tripData = {
@@ -627,14 +606,13 @@
             lng: d.spots[0]?.lng || -21.92,
             img: 'images/kirkjufell.jpg',
             wiki: '',
-            highlight: '點擊編輯特色說明...',
+            highlight: '點擊此處輸入新增景點特色說明...',
             gear: '防風防水外套、好走的鞋',
             caution: '請留意現場天氣與安全指示。'
           };
           d.spots.push(newSpot);
-          saveItineraryToLocal();
-          renderDays();
-          if (map) initMap();
+          sg.appendChild(spotCard(newSpot, d));
+          if (typeof saveItineraryToLocal === 'function') saveItineraryToLocal();
         }
       };
 
@@ -1074,42 +1052,23 @@
     document.addEventListener('click', (e) => {
       if (e.target.closest('.btn-move-up')) {
         const spotCardEl = e.target.closest('.spot-card');
-        const spotId = spotCardEl.id.replace('spot-', '');
-        tripData.days.forEach(d => {
-          const idx = d.spots.findIndex(s => s.id === spotId);
-          if (idx > 0) {
-            const temp = d.spots[idx];
-            d.spots[idx] = d.spots[idx - 1];
-            d.spots[idx - 1] = temp;
-          }
-        });
-        saveItineraryToLocal();
-        renderDays();
+        if (spotCardEl && spotCardEl.previousElementSibling) {
+          spotCardEl.parentNode.insertBefore(spotCardEl, spotCardEl.previousElementSibling);
+          saveItineraryToLocal();
+        }
       }
       if (e.target.closest('.btn-move-down')) {
         const spotCardEl = e.target.closest('.spot-card');
-        const spotId = spotCardEl.id.replace('spot-', '');
-        tripData.days.forEach(d => {
-          const idx = d.spots.findIndex(s => s.id === spotId);
-          if (idx !== -1 && idx < d.spots.length - 1) {
-            const temp = d.spots[idx];
-            d.spots[idx] = d.spots[idx + 1];
-            d.spots[idx + 1] = temp;
-          }
-        });
-        saveItineraryToLocal();
-        renderDays();
+        if (spotCardEl && spotCardEl.nextElementSibling) {
+          spotCardEl.parentNode.insertBefore(spotCardEl.nextElementSibling, spotCardEl);
+          saveItineraryToLocal();
+        }
       }
       if (e.target.closest('.btn-delete-spot')) {
         const spotCardEl = e.target.closest('.spot-card');
-        const spotId = spotCardEl.id.replace('spot-', '');
-        if (confirm('確定要刪除這個景點嗎？')) {
-          tripData.days.forEach(d => {
-            d.spots = d.spots.filter(s => s.id !== spotId);
-          });
+        if (spotCardEl && confirm('確定要刪除這個景點嗎？')) {
+          spotCardEl.remove();
           saveItineraryToLocal();
-          renderDays();
-          if (map) initMap();
         }
       }
       if (e.target.closest('.btn-wiki-match')) {
@@ -1179,31 +1138,23 @@
   }
 
   function saveItineraryToLocal() {
-    try {
-      localStorage.setItem(`memoir-trip-data-${tripId}`, JSON.stringify(tripData));
-    } catch(e) {
-      console.error('Error saving tripData to localStorage:', e);
+    const dayList = document.getElementById('dayList');
+    if (dayList && dayList.innerHTML.includes('day-card')) {
+      localStorage.setItem('iceland_2026_editorial_days', dayList.innerHTML);
     }
   }
 
   function loadItineraryFromLocal() {
-    try {
-      const saved = localStorage.getItem(`memoir-trip-data-${tripId}`);
-      if (saved) {
-        const parsed = JSON.parse(saved);
-        if (parsed && parsed.days && parsed.days.length > 0) {
-          tripData = parsed;
-        }
+    const saved = localStorage.getItem('iceland_2026_editorial_days');
+    if (saved && saved.includes('day-card')) {
+      const dayList = document.getElementById('dayList');
+      if (dayList) {
+        dayList.innerHTML = saved;
       }
-    } catch(e) {
-      console.error('Error loading tripData from localStorage:', e);
-    }
-  }
     }
   }
 
   document.addEventListener('DOMContentLoaded', () => {
-    loadItineraryFromLocal();
     renderDays();
 
     const deleteThisTripBtn = document.getElementById('delete-this-trip-btn');

@@ -38,7 +38,7 @@
     </nav>
     <div class="topbar-actions">
       <div class="settings-dropdown-wrap">
-        <button id="settingsMenuBtn" type="button" class="edit-mode-btn"><span>⚙️ 設定</span> <i class="fa-solid fa-chevron-down" style="font-size: 10px; margin-left: 2px;"></i></button>
+        <button id="settingsMenuBtn" class="edit-mode-btn"><span>⚙️ 設定</span> <i class="fa-solid fa-chevron-down" style="font-size: 10px; margin-left: 2px;"></i></button>
         <div id="settingsDropdown" class="settings-dropdown glass">
           <button id="edit-mode-toggle" class="dropdown-item"><i class="fa-solid fa-pen-to-square"></i> <span>✏️ 編輯模式</span></button>
           <button id="cloud-sync-btn" class="dropdown-item"><i class="fa-solid fa-cloud-arrow-up"></i> <span>☁️ 同步全隊</span></button>
@@ -314,7 +314,7 @@
   
   <!-- Embedded Fully Self-Contained Trip Data -->
   <script>
-  const icelandData = {
+  const tripData = {
     start: '2026-09-23T00:00:00+00:00',
     days: [
       {
@@ -485,32 +485,54 @@
      ICELAND 2026 - EDITORIAL INTERACTIVE LOGIC & CLOUD SYNC
      ========================================================================== */
 
-// Dynamic Trip Initialization & Clean Architecture
+  // Dynamic Trip Initialization (iceland-2026 vs. Custom Clean Projects)
   const urlParams = new URLSearchParams(window.location.search);
   const tripId = urlParams.get('id') || 'iceland-2026';
   
-  let tripData = null;
+  let tripData;
 
-  // 1. Custom Project Handling
-  if (tripId !== 'iceland-2026') {
-    const savedCustom = localStorage.getItem(`memoir-trip-data-${tripId}`);
-    if (savedCustom) {
-      try { tripData = JSON.parse(savedCustom); } catch(e) {}
+  const storedTripsRaw = localStorage.getItem('memoir-custom-trips');
+  const storedTrips = storedTripsRaw ? JSON.parse(storedTripsRaw) : [];
+  const matchedCustomMeta = storedTrips.find(t => t.id === tripId);
+
+  const savedTripDetails = localStorage.getItem(`memoir-trip-data-${tripId}`);
+
+  if (savedTripDetails) {
+    try {
+      tripData = JSON.parse(savedTripDetails);
+    } catch(e) {
+      tripData = null;
     }
-    if (!tripData) {
-      const storedTripsRaw = localStorage.getItem('memoir-custom-trips');
-      const storedTrips = storedTripsRaw ? JSON.parse(storedTripsRaw) : [];
-      const matchedCustomMeta = storedTrips.find(t => t.id === tripId) || {};
+  }
+
+  if (!tripData) {
+    if (tripId === 'iceland-2026') {
+      tripData = icelandData;
+    } else {
+      // 100% CLEAN SLATE FOR CUSTOM NEW PROJECT! ZERO ICELAND SPOTS!
+      const title = matchedCustomMeta ? (matchedCustomMeta.title || matchedCustomMeta.name) : '新旅遊專案';
+      const dest = matchedCustomMeta ? matchedCustomMeta.dest : '自訂目的地';
+      const dates = matchedCustomMeta ? matchedCustomMeta.dates : '2026/09/01 – 09/05';
+      const coverImg = matchedCustomMeta ? (matchedCustomMeta.coverImg || matchedCustomMeta.cover) : 'images/seljalandsfoss.jpg';
+
       tripData = {
         id: tripId,
-        title: matchedCustomMeta.title || matchedCustomMeta.name || '新旅遊專案',
-        dest: matchedCustomMeta.dest || '自訂目的地',
-        start: '2026-09-01', end: '2026-09-05',
-        coverImg: matchedCustomMeta.coverImg || matchedCustomMeta.cover || 'images/seljalandsfoss.jpg',
+        title: title,
+        dest: dest,
+        start: '2026-09-01',
+        end: '2026-09-05',
+        coverImg: coverImg,
         days: [
           {
-            day: 1, date: '2026-09-01', label: '第 1 天行程', intensity: 'easy', tags: ['nature'],
-            summary: '開啟「⚙️ 設定 → ✏️ 編輯模式」即可新增景點！', wear: '舒適穿著', tips: [], spots: []
+            day: 1,
+            date: '2026-09-01',
+            label: '第 1 天行程',
+            intensity: 'easy',
+            tags: ['nature'],
+            summary: '點擊編輯這天的行程安排...開啟「⚙️ 設定 → ✏️ 編輯模式」即可使用智慧搜尋加入第一個景點！',
+            wear: '舒適旅遊穿著',
+            tips: ['點擊「+ 新增景點」即可透過智慧搜尋帶入照片與座標！'],
+            spots: []
           }
         ],
         prep: { admin:[], bookings:[], gear:[], tech:[] },
@@ -519,26 +541,8 @@
     }
   }
 
-  // 2. Default Benchmark Iceland Project Handling
-  if (tripId === 'iceland-2026') {
-    const savedIceland = localStorage.getItem('memoir-trip-data-iceland-2026');
-    if (savedIceland) {
-      try {
-        const parsed = JSON.parse(savedIceland);
-        if (parsed && parsed.days && parsed.days.length > 0 && parsed.days[0].spots && parsed.days[0].spots.length > 0) {
-          tripData = parsed;
-        }
-      } catch(e) {}
-    }
-    if (!tripData) {
-      tripData = icelandData;
-    }
-  }
 
-  if (!tripData) tripData = icelandData;
-  if (!tripData.prep) tripData.prep = icelandData.prep;
-  if (!tripData.packing) tripData.packing = icelandData.packing;
-
+  // Option A: Smart Spot Search & Match Global Functions
   let activeTargetDay = null;
 
   function openSpotSearchModal(day) {
@@ -1158,56 +1162,45 @@
     const mapContainer = document.getElementById('map');
     if (!mapContainer) return;
 
-    if (!map) {
-      map = L.map('map', { zoomControl: true, scrollWheelZoom: false }).setView([64.85, -18.8], 6);
-      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        maxZoom: 18,
-        attribution: '&copy; OpenStreetMap contributors'
-      }).addTo(map);
-      markerLayer = L.layerGroup().addTo(map);
-    } else {
-      if (markerLayer) markerLayer.clearLayers();
-      if (routeLine) map.removeLayer(routeLine);
-    }
+    map = L.map('map', { zoomControl: true, scrollWheelZoom: false }).setView([64.85, -18.8], 6);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      maxZoom: 18,
+      attribution: '&copy; OpenStreetMap contributors'
+    }).addTo(map);
 
-    allMarkers.length = 0;
+    markerLayer = L.layerGroup().addTo(map);
     const route = [];
 
-    const legend = document.getElementById('mapLegend');
-    if (legend) legend.innerHTML = '';
-
     tripData.days.forEach((d, i) => {
-      if (legend) {
-        legend.insertAdjacentHTML('beforeend', `<div class="legend-item"><span class="legend-dot" style="background:${dayColors[i % dayColors.length]}"></span><span>D${d.day} ${fmtDate(d.date)} · ${d.label} (${d.spots.length}景點)</span></div>`);
-      }
-
       d.spots.forEach(s => {
-        if (typeof s.lat === 'number' && typeof s.lng === 'number' && !isNaN(s.lat) && !isNaN(s.lng)) {
-          route.push([s.lat, s.lng]);
-          const icon = L.divIcon({
-            className: 'custom-marker',
-            html: `<div class="marker-dot" style="background:${dayColors[i % dayColors.length]}"></div>`,
-            iconSize: [18, 18],
-            iconAnchor: [9, 9]
+        route.push([s.lat, s.lng]);
+        const icon = L.divIcon({
+          className: 'custom-marker',
+          html: `<div class="marker-dot" style="background:${dayColors[i % dayColors.length]}"></div>`,
+          iconSize: [18, 18],
+          iconAnchor: [9, 9]
+        });
+        const marker = L.marker([s.lat, s.lng], { icon })
+          .bindPopup(`<strong>Day ${d.day} · ${s.name}</strong><br><span>${s.en}</span><br><a class="popup-link" href="#spot-${s.id}">查看景點卡 ↓</a>`);
+        
+        marker.on('popupopen', () => {
+          document.querySelector('.leaflet-popup-content a')?.addEventListener('click', () => {
+            document.getElementById(`spot-${s.id}`)?.scrollIntoView({ behavior: 'smooth', block: 'center' });
           });
-          const marker = L.marker([s.lat, s.lng], { icon })
-            .bindPopup(`<strong>Day ${d.day} · ${s.name}</strong><br><span>${s.en}</span><br><a class="popup-link" href="#spot-${s.id}">查看景點卡 ↓</a>`);
-          
-          marker.on('popupopen', () => {
-            document.querySelector('.leaflet-popup-content a')?.addEventListener('click', () => {
-              document.getElementById(`spot-${s.id}`)?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-            });
-          });
-          
-          marker.addTo(markerLayer);
-          allMarkers.push({ marker, spot: s, day: d });
-        }
+        });
+        
+        marker.addTo(markerLayer);
+        allMarkers.push({ marker, spot: s, day: d });
       });
     });
 
-    if (route.length > 0) {
-      routeLine = L.polyline(route, { color: '#18242d', weight: 2, opacity: 0.5, dashArray: '5 8' }).addTo(map);
-      if (map) map.fitBounds(route, { padding: [40, 40], maxZoom: 10 });
+    routeLine = L.polyline(route, { color: '#18242d', weight: 2, opacity: 0.5, dashArray: '5 8' }).addTo(map);
+
+    const legend = document.getElementById('mapLegend');
+    if (legend) {
+      tripData.days.forEach((d, i) => {
+        legend.insertAdjacentHTML('beforeend', `<div class="legend-item"><span class="legend-dot" style="background:${dayColors[i % dayColors.length]}"></span><span>D${d.day} ${fmtDate(d.date)} · ${d.label}</span></div>`);
+      });
     }
 
     document.querySelectorAll('[data-map-filter]').forEach(btn => {
@@ -1307,16 +1300,13 @@
       ['shared', '共用／分裝', '夫妻或旅伴一起準備']
     ];
 
-    const packingData = (tripData && tripData.packing) ? tripData.packing : { carry:[], cabin:[], checked:[], shared:[] };
-
     groups.forEach(([key, title, sub]) => {
-      const items = packingData[key] || [];
       const card = document.createElement('article');
       card.className = 'packing-card';
-      card.innerHTML = `<div class="packing-head"><div><h3>${title}</h3><p>${sub}</p></div><span>${items.length} 項</span></div><div class="check-list"></div>`;
+      card.innerHTML = `<div class="packing-head"><div><h3>${title}</h3><p>${sub}</p></div><span>${tripData.packing[key].length} 項</span></div><div class="check-list"></div>`;
       const list = card.querySelector('.check-list');
       
-      items.forEach((item, i) => {
+      tripData.packing[key].forEach((item, i) => {
         const id = `pack-${key}-${i}`;
         const row = document.createElement('label');
         row.className = 'check-row';
@@ -1324,18 +1314,6 @@
         row.querySelector('input').onchange = e => e.target.checked ? localStorage.setItem(id, '1') : localStorage.removeItem(id);
         list.appendChild(row);
       });
-
-      grid.appendChild(card);
-    });
-
-    const resetBtn = document.getElementById('resetPacking');
-    if (resetBtn) {
-      resetBtn.onclick = () => {
-        Object.keys(localStorage).filter(k => k.startsWith('pack-')).forEach(k => localStorage.removeItem(k));
-        document.querySelectorAll('#packingGrid input').forEach(x => x.checked = false);
-      };
-    }
-  });
 
       grid.appendChild(card);
     });
@@ -1364,72 +1342,11 @@
 
   function renderToday() {
     const select = document.getElementById('todaySelect');
-    const panel = document.getElementById('todayPanel');
-    if (!select || !panel) return;
-    select.innerHTML = '';
-
-    if (!tripData || !tripData.days || tripData.days.length === 0) {
-      panel.innerHTML = '<div style="padding:20px;text-align:center;color:var(--muted);">尚無今天行程資料</div>';
-      return;
-    }
+    if (!select) return;
 
     tripData.days.forEach(d => {
       select.insertAdjacentHTML('beforeend', `<option value="${d.day}">Day ${d.day} · ${fmtDate(d.date)} · ${d.label}</option>`);
     });
-
-    const now = new Date();
-    const todayISO = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
-    let active = tripData.days.find(d => d.date === todayISO) || tripData.days.find(d => new Date(d.date + 'T23:59:59') >= now) || tripData.days[0];
-    if (!active) active = tripData.days[0];
-
-    const draw = (d) => {
-      if (!d) return;
-      const spotsList = d.spots || [];
-      const gear = [...new Set(spotsList.flatMap(s => (s.gear || '').split(/[、；]/).map(x => x.trim()).filter(Boolean)))].slice(0, 6);
-      panel.innerHTML = `
-        <article class="today-card">
-          <div class="today-main">
-            <div class="today-copy">
-              <div class="today-date">DAY ${d.day} · ${fmtDate(d.date)}</div>
-              <h3>${d.label}</h3>
-              <p class="today-summary">${d.summary || ''}</p>
-              <div class="today-route">
-                ${spotsList.map(s => `<div class="route-stop">${s.name}</div>`).join('')}
-              </div>
-            </div>
-            <aside class="today-side">
-              <div>
-                <h4>今天記得帶</h4>
-                <p>${gear.length ? gear.join(' · ') : '依天氣準備基本防風保暖裝備'}</p>
-              </div>
-              <div>
-                <h4>今天最重要</h4>
-                <ul>
-                  ${(d.tips || []).slice(0, 3).map(x => `<li>${x}</li>`).join('')}
-                </ul>
-              </div>
-              <div class="today-actions">
-                <button id="todayMap"><i class="fa-solid fa-location-crosshairs"></i> 看今天地圖</button>
-                <a href="https://en.vedur.is/" target="_blank" rel="noreferrer">Vedur 天氣 ↗</a>
-                <a href="https://safetravel.is/" target="_blank" rel="noreferrer">SafeTravel ↗</a>
-              </div>
-            </aside>
-          </div>
-          <div class="daily-checks">
-            <div class="daily-check"><strong>出門前</strong><span>手機 · 錢包 · 行充 · 水</span></div>
-            <div class="daily-check"><strong>戶外</strong><span>風雨層隨身，不放大行李</span></div>
-            <div class="daily-check"><strong>晚上</strong><span>${d.aurora ? '保留極光彈性 · 毛帽手套' : '確認隔日集合與天氣'}</span></div>
-            <div class="daily-check"><strong>照片</strong><span>電池 · 鏡頭布 · 儲存空間</span></div>
-          </div>
-        </article>
-      `;
-      const tmBtn = document.getElementById('todayMap');
-      if (tmBtn) tmBtn.onclick = () => focusDay(d);
-    };
-
-    draw(active);
-    select.onchange = () => draw(tripData.days.find(d => d.day === Number(select.value)));
-  });
 
     const now = new Date();
     const todayISO = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
@@ -1532,9 +1449,6 @@
       if (confirm('確定要清理瀏覽器快取，重新載入預設 11 天完整行程與照片嗎？')) {
         localStorage.removeItem('iceland_2026_editorial_days');
         localStorage.removeItem('iceland_2026_edited_itinerary');
-        localStorage.removeItem('memoir-trip-data-iceland-2026');
-        localStorage.removeItem(`memoir-trip-${tripId}`);
-        tripData = icelandData;
         renderDays();
 
     const deleteThisTripBtn = document.getElementById('delete-this-trip-btn');
@@ -1747,7 +1661,44 @@
   }
 
   document.addEventListener('DOMContentLoaded', () => {
-    // Settings Dropdown Toggle Action (Attached first to ensure availability)
+    renderDays();
+
+    const deleteThisTripBtn = document.getElementById('delete-this-trip-btn');
+    if (deleteThisTripBtn) {
+      deleteThisTripBtn.onclick = () => {
+        if (confirm('確定要刪除此旅遊專案嗎？刪除後將回到專案大廳。')) {
+          const stored = localStorage.getItem('memoir-custom-trips');
+          if (stored) {
+            const list = JSON.parse(stored).filter(t => t.id !== tripId);
+            localStorage.setItem('memoir-custom-trips', JSON.stringify(list));
+          }
+          localStorage.removeItem(`memoir-trip-${tripId}`);
+          window.location.href = 'index.html';
+        }
+      };
+    }
+
+    renderPrep();
+    renderPacking();
+    renderToday();
+    initMap();
+    setupFilters();
+    setupMisc();
+
+    // Update Dynamic Topbar & Hero Titles for Custom Trips
+    if (tripData) {
+      const topbarTitle = document.getElementById('topbarTripTitle');
+      if (topbarTitle) topbarTitle.textContent = `← 專案大廳 · ${tripData.title || '漫遊手冊'}`;
+
+      const heroH1 = document.querySelector('.hero h1');
+      if (heroH1) {
+        heroH1.innerHTML = `${tripData.title || '旅遊手冊'}<br><span>${tripData.dest || ''} · 十一日環島旅遊書</span>`;
+      }
+    }
+
+    initSpotSearchModal();
+
+    // Settings Dropdown Toggle Action
     const settingsMenuBtn = document.getElementById('settingsMenuBtn');
     const settingsDropdown = document.getElementById('settingsDropdown');
     if (settingsMenuBtn && settingsDropdown) {
@@ -1763,30 +1714,7 @@
       });
     }
 
-    try { renderDays(); } catch(e) { console.error(e); }
-    try { renderPrep(); } catch(e) { console.error(e); }
-    try { renderPacking(); } catch(e) { console.error(e); }
-    try { renderToday(); } catch(e) { console.error(e); }
-    try { initMap(); } catch(e) { console.error(e); }
-    try { setupFilters(); } catch(e) { console.error(e); }
-    try { setupMisc(); } catch(e) { console.error(e); }
-    try { initSpotSearchModal(); } catch(e) { console.error(e); }
-
-    const deleteThisTripBtn = document.getElementById('delete-this-trip-btn');
-    if (deleteThisTripBtn) {
-      deleteThisTripBtn.onclick = () => {
-        if (confirm('確定要刪除此旅遊專案嗎？刪除後將回到專案大廳。')) {
-          const stored = localStorage.getItem('memoir-custom-trips');
-          if (stored) {
-            const list = JSON.parse(stored).filter(t => t.id !== tripId);
-            localStorage.setItem('memoir-custom-trips', JSON.stringify(list));
-          }
-          localStorage.removeItem(`memoir-trip-${tripId}`);
-          localStorage.removeItem(`memoir-trip-data-${tripId}`);
-          window.location.href = 'index.html';
-        }
-      };
-    }
+    // loadItineraryFromLocal();
 
     const dialog = document.getElementById('spotDialog');
     const dialogClose = document.querySelector('#spotDialog .dialog-close');

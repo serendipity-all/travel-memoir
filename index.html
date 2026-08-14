@@ -194,7 +194,7 @@
       const cover = document.getElementById('tripCover').value.trim() || 'images/seljalandsfoss.jpg';
 
       const newId = 'trip-' + Date.now();
-      const newTrip = { id: newId, id: newId, name: name, title: name, dest: dest, dates: dates, cover: cover, coverImg: cover, badge: '新建立手冊' };
+      const newTrip = { id: newId, name, dest, dates, cover, badge: '新建立手冊' };
 
       const list = getCustomTrips();
       list.push(newTrip);

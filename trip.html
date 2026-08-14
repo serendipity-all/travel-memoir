@@ -485,107 +485,60 @@
      ICELAND 2026 - EDITORIAL INTERACTIVE LOGIC & CLOUD SYNC
      ========================================================================== */
 
-  // Dynamic Trip Initialization (iceland-2026 vs. Custom Clean Projects)
+// Dynamic Trip Initialization & Clean Architecture
   const urlParams = new URLSearchParams(window.location.search);
   const tripId = urlParams.get('id') || 'iceland-2026';
   
-  let tripData;
-// Auto-purge bad/corrupted local storage keys for iceland-2026 on load
-  if (tripId === 'iceland-2026') {
-    const rawData = localStorage.getItem('memoir-trip-data-iceland-2026');
-    if (rawData) {
-      try {
-        const p = JSON.parse(rawData);
-        if (!p || !p.days || p.days.length === 0 || !p.days[0].spots || p.days[0].spots.length === 0) {
-          localStorage.removeItem('memoir-trip-data-iceland-2026');
-          localStorage.removeItem('iceland_2026_editorial_days');
-        }
-      } catch(e) {
-        localStorage.removeItem('memoir-trip-data-iceland-2026');
-      }
+  let tripData = null;
+
+  // 1. Custom Project Handling
+  if (tripId !== 'iceland-2026') {
+    const savedCustom = localStorage.getItem(`memoir-trip-data-${tripId}`);
+    if (savedCustom) {
+      try { tripData = JSON.parse(savedCustom); } catch(e) {}
     }
-  }
-
-  if (!tripData) tripData = icelandData;
-  if (!tripData.days || !Array.isArray(tripData.days) || tripData.days.length === 0) {
-    if (tripId === 'iceland-2026') {
-      tripData = icelandData;
-    } else {
-      tripData.days = [
-        {
-          day: 1,
-          date: '2026-09-23',
-          label: '第 1 天行程',
-          intensity: 'easy',
-          tags: ['nature'],
-          summary: '開啟「⚙️ 設定 → ✏️ 編輯模式」點擊「+ 新增景點」即可加入第一個景點！',
-          wear: '舒適旅遊穿著',
-          tips: ['使用智慧搜尋可自動帶入照片與地圖座標。'],
-          spots: []
-        }
-      ];
-    }
-  }
-  if (!tripData.prep) tripData.prep = { admin:[], bookings:[], gear:[], tech:[] };
-  if (!tripData.packing) tripData.packing = { carry:[], cabin:[], checked:[], shared:[] };
-
-
-  const storedTripsRaw = localStorage.getItem('memoir-custom-trips');
-  const storedTrips = storedTripsRaw ? JSON.parse(storedTripsRaw) : [];
-  const matchedCustomMeta = storedTrips.find(t => t.id === tripId);
-
-  const savedTripDetails = localStorage.getItem(`memoir-trip-data-${tripId}`);
-
-  if (savedTripDetails) {
-    try {
-      const parsed = JSON.parse(savedTripDetails);
-      if (parsed && parsed.days && parsed.days.length > 0 && parsed.days[0].spots) {
-        tripData = parsed;
-      }
-    } catch(e) {
-      tripData = null;
-    }
-  }
-
-  if (!tripData || !tripData.days || tripData.days.length === 0) {
-    if (tripId === 'iceland-2026') {
-      tripData = icelandData;
-    } else {
-      const title = matchedCustomMeta ? (matchedCustomMeta.title || matchedCustomMeta.name) : '新旅遊專案';
-      const dest = matchedCustomMeta ? matchedCustomMeta.dest : '自訂目的地';
-      const dates = matchedCustomMeta ? matchedCustomMeta.dates : '2026/09/01 – 09/05';
-      const coverImg = matchedCustomMeta ? (matchedCustomMeta.coverImg || matchedCustomMeta.cover) : 'images/seljalandsfoss.jpg';
-
+    if (!tripData) {
+      const storedTripsRaw = localStorage.getItem('memoir-custom-trips');
+      const storedTrips = storedTripsRaw ? JSON.parse(storedTripsRaw) : [];
+      const matchedCustomMeta = storedTrips.find(t => t.id === tripId) || {};
       tripData = {
         id: tripId,
-        title: title,
-        dest: dest,
-        start: '2026-09-01',
-        end: '2026-09-05',
-        coverImg: coverImg,
+        title: matchedCustomMeta.title || matchedCustomMeta.name || '新旅遊專案',
+        dest: matchedCustomMeta.dest || '自訂目的地',
+        start: '2026-09-01', end: '2026-09-05',
+        coverImg: matchedCustomMeta.coverImg || matchedCustomMeta.cover || 'images/seljalandsfoss.jpg',
         days: [
           {
-            day: 1,
-            date: '2026-09-01',
-            label: '第 1 天行程',
-            intensity: 'easy',
-            tags: ['nature'],
-            summary: '點擊編輯這天的行程安排...開啟「⚙️ 設定 → ✏️ 編輯模式」即可使用智慧搜尋加入第一個景點！',
-            wear: '舒適旅遊穿著',
-            tips: ['點擊「+ 新增景點」即可透過智慧搜尋帶入照片與座標！'],
-            spots: []
+            day: 1, date: '2026-09-01', label: '第 1 天行程', intensity: 'easy', tags: ['nature'],
+            summary: '開啟「⚙️ 設定 → ✏️ 編輯模式」即可新增景點！', wear: '舒適穿著', tips: [], spots: []
           }
         ],
         prep: { admin:[], bookings:[], gear:[], tech:[] },
         packing: { carry:[], cabin:[], checked:[], shared:[] }
       };
     }
-  };
+  }
+
+  // 2. Default Benchmark Iceland Project Handling
+  if (tripId === 'iceland-2026') {
+    const savedIceland = localStorage.getItem('memoir-trip-data-iceland-2026');
+    if (savedIceland) {
+      try {
+        const parsed = JSON.parse(savedIceland);
+        if (parsed && parsed.days && parsed.days.length > 0 && parsed.days[0].spots && parsed.days[0].spots.length > 0) {
+          tripData = parsed;
+        }
+      } catch(e) {}
+    }
+    if (!tripData) {
+      tripData = icelandData;
     }
   }
 
+  if (!tripData) tripData = icelandData;
+  if (!tripData.prep) tripData.prep = icelandData.prep;
+  if (!tripData.packing) tripData.packing = icelandData.packing;
 
-  // Option A: Smart Spot Search & Match Global Functions
   let activeTargetDay = null;
 
   function openSpotSearchModal(day) {

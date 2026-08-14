@@ -1,97 +1,85 @@
 <!DOCTYPE html>
 <html lang="zh-TW">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Travel Memoir | 旅遊回憶錄</title>
-  <link rel="stylesheet" href="style.css">
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="theme-color" content="#101820" />
+  <title>Travel Memoir 旅遊回憶錄 | 專案大廳</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Georgia&family=Inter:wght@400;600;700;800&family=Noto+Sans+TC:wght@400;500;700;900&family=Noto+Serif+TC:wght@600;700;900&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
-  
-  <!-- Firebase Compat SDKs -->
+  <link rel="stylesheet" href="style.css" />
+
+  <!-- Firebase Compat SDK -->
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
 </head>
 <body>
 
-  <!-- Auth Page (Unauthenticated State) -->
-  <div id="auth-page" class="aurora-bg">
-    <div class="auth-content glass">
-      <div class="auth-logo">◒ TRAVEL MEMOIR</div>
-      <p class="auth-tagline">記錄每一段美好旅程 · 專屬旅遊回憶錄</p>
-      
-      <button id="login-btn" class="btn-primary" style="width: 100%; padding: 14px; font-size: 1.05rem;">
-        <svg viewBox="0 0 24 24" width="22" height="22" xmlns="http://www.w3.org/2000/svg">
-          <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
-          <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
-          <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/>
-          <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
-        </svg>
-        使用 Google 帳號登入
-      </button>
-      
-      <p class="auth-help">旅伴邀請？直接點選邀請連結即可，登入後將自動加入。</p>
+  <!-- Sticky Glass Topbar -->
+  <header class="topbar">
+    <a class="brand" href="index.html">
+      <span class="brand-mark">◒</span>
+      <span>TRAVEL MEMOIR · 旅遊回憶錄</span>
+    </a>
+    <div class="topbar-actions">
+      <button id="addTripBtn" class="btn primary"><i class="fa-solid fa-plus"></i> 新增旅遊專案</button>
+      <button id="themeBtn" class="icon-btn" aria-label="切換深色模式">☾</button>
     </div>
-  </div>
+  </header>
 
-  <!-- Main App (Authenticated State) -->
-  <div id="app">
-    <!-- Topbar -->
-    <header class="topbar glass">
-      <div class="brand-logo">◒ Travel Memoir <span>旅遊回憶錄</span></div>
-      <div class="user-menu">
-        <button id="themeToggleBtn" class="chip" style="margin-right: 8px;">🌙 切換主題</button>
-        <img id="user-avatar" class="user-avatar" src="" alt="User Avatar">
-        <span id="user-name" class="user-name"></span>
-        <button id="logout-btn" class="logout-btn">登出</button>
+  <main>
+    <section class="portal-header">
+      <div>
+        <div class="eyebrow">MY TRAVEL BOOKS</div>
+        <h1 class="portal-title">我的旅遊回憶錄</h1>
+        <p class="lead">選擇一個旅遊專案開啟互動旅遊手冊，或建立全新的旅遊規劃。</p>
       </div>
-    </header>
+    </section>
 
-    <!-- Main Content -->
-    <main class="container">
-      <h2 class="section-header">我的旅程與回憶</h2>
-      <div id="loading" class="loading-state"><i class="fas fa-spinner fa-spin fa-2x"></i></div>
-      <div id="trips" class="trip-grid"></div>
-    </main>
+    <section id="portalGrid" class="portal-grid"></section>
+  </main>
 
-    <!-- Admin Add Trip FAB -->
-    <button id="add-trip-fab" class="fab" style="display: none;" title="新增旅程">
-      <i class="fas fa-plus"></i>
-    </button>
-  </div>
-
-  <!-- Add Trip Modal -->
-  <div id="add-trip-modal" class="modal-overlay">
-    <div class="dialog-card glass">
-      <button class="dialog-close" id="close-modal-btn">&times;</button>
-      <h2 class="dialog-header">新增旅程</h2>
-      <form id="add-trip-form">
-        <div class="form-group">
+  <!-- Add Trip Modal Overlay -->
+  <div id="addTripModal" class="portal-modal-overlay">
+    <div class="portal-modal-card">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
+        <h3 style="font-family: Georgia, serif; font-size: 24px;"><i class="fa-solid fa-plane-departure" style="color: var(--accent);"></i> 新增旅遊專案</h3>
+        <button id="closeModalBtn" class="icon-btn">&times;</button>
+      </div>
+      <form id="addTripForm">
+        <div class="portal-form-group">
           <label>旅行名稱</label>
-          <input type="text" id="trip-name" required placeholder="例如：2026 冰島極光之旅">
+          <input type="text" id="tripName" required placeholder="例如：2026 冰島夢幻之旅">
         </div>
-        <div class="form-group">
+        <div class="portal-form-group">
           <label>目的地</label>
-          <input type="text" id="trip-dest" required placeholder="例如：冰島">
+          <input type="text" id="tripDest" required placeholder="例如：冰島 環島 11 日">
         </div>
-        <div class="form-group">
-          <label>出發日期</label>
-          <input type="date" id="trip-start" required>
+        <div class="portal-form-group">
+          <label>出發與結束日期</label>
+          <input type="text" id="tripDates" required placeholder="例如：2026/09/23 – 10/03">
         </div>
-        <div class="form-group">
-          <label>結束日期</label>
-          <input type="date" id="trip-end" required>
+        <div class="portal-form-group">
+          <label>封面圖片網址 (URL) 或相對路徑</label>
+          <input type="text" id="tripCover" placeholder="images/seljalandsfoss.jpg">
         </div>
-        <div class="form-group">
-          <label>封面圖片 URL 或相對路徑</label>
-          <input type="text" id="trip-cover" placeholder="images/seljalandsfoss.jpg 或 https://...">
+        <div style="display: flex; justify-content: flex-end; gap: 12px; margin-top: 28px;">
+          <button type="button" id="cancelModalBtn" class="chip">取消</button>
+          <button type="submit" class="btn primary"><i class="fa-solid fa-check"></i> 建立並進入專案</button>
         </div>
-        <button type="submit" class="btn-primary" style="width: 100%; margin-top: 10px;">建立旅程</button>
       </form>
     </div>
   </div>
 
+  <footer>
+    <span>TRAVEL MEMOIR · interactive travel book portal v1.0</span>
+  </footer>
+
   <script>
+    // Firebase Config
     const firebaseConfig = {
       apiKey: "AIzaSyALQhQzhnkj-UOmRZGVQKMKqkW0DecwE3s",
       authDomain: "my-travel-book-85243.firebaseapp.com",
@@ -100,186 +88,125 @@
       messagingSenderId: "936708966292",
       appId: "1:936708966292:web:d3c7c08e14f60548cf3181"
     };
-
-    firebase.initializeApp(firebaseConfig);
-    const auth = firebase.auth();
+    if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
     const db = firebase.firestore();
 
-    const ADMIN_EMAIL = "dreamland11023@gmail.com";
-
-    const authPage = document.getElementById('auth-page');
-    const appPage = document.getElementById('app');
-    const loginBtn = document.getElementById('login-btn');
-    const logoutBtn = document.getElementById('logout-btn');
-    const addTripFab = document.getElementById('add-trip-fab');
-    const addTripModal = document.getElementById('add-trip-modal');
-    const closeModalBtn = document.getElementById('close-modal-btn');
-    const addTripForm = document.getElementById('add-trip-form');
-    const tripsContainer = document.getElementById('trips');
-    const loadingState = document.getElementById('loading');
-    const themeToggleBtn = document.getElementById('themeToggleBtn');
+    // Default Trips
+    const defaultTrips = [
+      {
+        id: 'iceland-2026',
+        name: '2026 冰島夢幻之旅',
+        dest: '冰島 · 環島 11 日',
+        dates: '2026/09/23 – 10/03',
+        cover: 'images/seljalandsfoss.jpg',
+        badge: '11 天 · 25 景點'
+      }
+    ];
 
     // Theme toggle
-    themeToggleBtn.addEventListener('click', () => {
+    const themeBtn = document.getElementById('themeBtn');
+    themeBtn.addEventListener('click', () => {
       document.body.classList.toggle('light-mode');
       const isLight = document.body.classList.contains('light-mode');
-      themeToggleBtn.textContent = isLight ? '☀️ 淺色主題' : '🌙 深色主題';
+      themeBtn.textContent = isLight ? '☀️' : '☾';
+      localStorage.setItem('memoir-portal-theme', isLight ? 'light' : 'dark');
     });
+    if (localStorage.getItem('memoir-portal-theme') === 'light') {
+      document.body.classList.add('light-mode');
+      themeBtn.textContent = '☀️';
+    }
 
-    // Auth
-    loginBtn.addEventListener('click', () => {
-      const provider = new firebase.auth.GoogleAuthProvider();
-      auth.signInWithPopup(provider).catch(error => console.error(error));
-    });
+    function getCustomTrips() {
+      const stored = localStorage.getItem('memoir-custom-trips');
+      return stored ? JSON.parse(stored) : [];
+    }
 
-    logoutBtn.addEventListener('click', () => auth.signOut());
+    function saveCustomTrips(trips) {
+      localStorage.setItem('memoir-custom-trips', JSON.stringify(trips));
+    }
 
-    auth.onAuthStateChanged(user => {
-      if (user) {
-        authPage.style.display = 'none';
-        appPage.style.display = 'flex';
-        
-        document.getElementById('user-avatar').src = user.photoURL || 'https://via.placeholder.com/32';
-        document.getElementById('user-name').textContent = user.displayName || user.email;
+    function renderPortal() {
+      const grid = document.getElementById('portalGrid');
+      grid.innerHTML = '';
 
-        if (user.email === ADMIN_EMAIL) {
-          addTripFab.style.display = 'flex';
-        }
+      const customTrips = getCustomTrips();
+      const allTrips = [...defaultTrips, ...customTrips];
 
-        loadTrips(user);
-      } else {
-        authPage.style.display = 'flex';
-        appPage.style.display = 'none';
-      }
-    });
+      allTrips.forEach(trip => {
+        const card = document.createElement('div');
+        card.className = 'portal-card';
+        card.onclick = (e) => {
+          if (e.target.closest('.portal-card-delete')) return;
+          window.location.href = `trip.html?id=${trip.id}`;
+        };
 
-    function loadTrips(user) {
-      loadingState.style.display = 'flex';
-      tripsContainer.innerHTML = '';
+        const coverUrl = trip.cover || 'images/seljalandsfoss.jpg';
 
-      db.collection('trips').onSnapshot(snapshot => {
-        loadingState.style.display = 'none';
-        tripsContainer.innerHTML = '';
+        card.innerHTML = `
+          <div class="portal-card-cover" style="background-image: url('${coverUrl}')">
+            <span class="portal-card-badge">${trip.badge || '旅遊手冊'}</span>
+            ${trip.id !== 'iceland-2026' ? `<button class="portal-card-delete" title="刪除專案" data-id="${trip.id}"><i class="fa-solid fa-trash"></i></button>` : ''}
+          </div>
+          <div class="portal-card-body">
+            <div class="portal-card-title">${trip.name}</div>
+            <div class="portal-card-meta">
+              <span>📍 ${trip.dest}</span>
+            </div>
+            <div class="portal-card-meta" style="margin-top: 4px;">
+              <span>📅 ${trip.dates}</span>
+            </div>
+          </div>
+        `;
 
-        let hasTrips = false;
-
-        snapshot.forEach(doc => {
-          const trip = doc.data();
-          const tripId = doc.id;
-
-          // Permission check: admin or allowed
-          const isAdmin = (user.email === ADMIN_EMAIL) ||
-                          (trip.adminUids && trip.adminUids.includes(user.uid)) ||
-                          (trip.admin === user.email);
-          const isMember = (trip.memberUids && trip.memberUids.includes(user.uid)) ||
-                           (trip.members && trip.members.includes(user.email));
-
-          if (isAdmin || isMember) {
-            hasTrips = true;
-            renderTripCard(tripId, trip);
+        if (trip.id !== 'iceland-2026') {
+          const delBtn = card.querySelector('.portal-card-delete');
+          if (delBtn) {
+            delBtn.onclick = (e) => {
+              e.stopPropagation();
+              if (confirm(`確定要刪除「${trip.name}」專案嗎？`)) {
+                const list = getCustomTrips().filter(t => t.id !== trip.id);
+                saveCustomTrips(list);
+                renderPortal();
+              }
+            };
           }
-        });
-
-        // Always show Iceland 2026 card if not created or empty
-        if (!hasTrips) {
-          renderDefaultIcelandCard();
         }
-      }, err => {
-        console.error("Error loading trips:", err);
-        loadingState.style.display = 'none';
-        renderDefaultIcelandCard();
+
+        grid.appendChild(card);
       });
     }
 
-    function renderTripCard(tripId, trip) {
-      const card = document.createElement('div');
-      card.className = 'trip-card glass';
-      card.onclick = () => window.location.href = `trip.html?id=${tripId}`;
-      
-      const title = trip.title || trip.name || '2026 冰島極光之旅';
-      const cover = trip.coverImg || trip.coverUrl || 'images/seljalandsfoss.jpg';
-      const dest = trip.destination || '冰島';
-      const startDate = trip.startDate || '2026-09-23';
-      const endDate = trip.endDate || '2026-10-03';
-      const status = trip.status || 'planning';
+    // Modal Logic
+    const addTripBtn = document.getElementById('addTripBtn');
+    const addTripModal = document.getElementById('addTripModal');
+    const closeModalBtn = document.getElementById('closeModalBtn');
+    const cancelModalBtn = document.getElementById('cancelModalBtn');
+    const addTripForm = document.getElementById('addTripForm');
 
-      card.innerHTML = `
-        <div class="trip-cover" style="background-image: url('${cover}')">
-          <span class="trip-status status-${status}">${status === 'planning' ? '規劃中' : '進行中'}</span>
-        </div>
-        <div class="trip-info">
-          <h3 class="trip-title">${title}</h3>
-          <div class="trip-dest"><i class="fas fa-location-dot"></i> ${dest}</div>
-          <div class="trip-dates"><i class="far fa-calendar-alt"></i> ${startDate} ~ ${endDate}</div>
-        </div>
-      `;
-      tripsContainer.appendChild(card);
-    }
+    addTripBtn.onclick = () => addTripModal.style.display = 'flex';
+    closeModalBtn.onclick = cancelModalBtn.onclick = () => addTripModal.style.display = 'none';
 
-    function renderDefaultIcelandCard() {
-      const card = document.createElement('div');
-      card.className = 'trip-card glass';
-      card.onclick = () => window.location.href = `trip.html?id=iceland-2026`;
-      
-      card.innerHTML = `
-        <div class="trip-cover" style="background-image: url('images/seljalandsfoss.jpg')">
-          <span class="trip-status status-planning">經典範本</span>
-        </div>
-        <div class="trip-info">
-          <h3 class="trip-title">2026 冰島夢幻之旅</h3>
-          <div class="trip-dest"><i class="fas fa-location-dot"></i> 冰島環島 11 日</div>
-          <div class="trip-dates"><i class="far fa-calendar-alt"></i> 2026-09-23 ~ 2026-10-03</div>
-        </div>
-      `;
-      tripsContainer.appendChild(card);
-    }
-
-    // Add Trip Modal Logic
-    addTripFab.addEventListener('click', () => addTripModal.style.display = 'flex');
-    closeModalBtn.addEventListener('click', () => addTripModal.style.display = 'none');
-    
-    addTripForm.addEventListener('submit', async (e) => {
+    addTripForm.onsubmit = (e) => {
       e.preventDefault();
-      const submitBtn = addTripForm.querySelector('button[type="submit"]');
-      submitBtn.disabled = true;
-      submitBtn.textContent = '建立中...';
+      const name = document.getElementById('tripName').value.trim();
+      const dest = document.getElementById('tripDest').value.trim();
+      const dates = document.getElementById('tripDates').value.trim();
+      const cover = document.getElementById('tripCover').value.trim() || 'images/seljalandsfoss.jpg';
 
-      try {
-        const user = auth.currentUser;
-        const name = document.getElementById('trip-name').value;
-        const dest = document.getElementById('trip-dest').value;
-        const start = document.getElementById('trip-start').value;
-        const end = document.getElementById('trip-end').value;
-        const cover = document.getElementById('trip-cover').value || 'images/seljalandsfoss.jpg';
+      const newId = 'trip-' + Date.now();
+      const newTrip = { id: newId, name, dest, dates, cover, badge: '新建立手冊' };
 
-        const newTrip = {
-          title: name,
-          name: name,
-          destination: dest,
-          startDate: start,
-          endDate: end,
-          coverImg: cover,
-          coverUrl: cover,
-          status: 'planning',
-          createdAt: firebase.firestore.FieldValue.serverTimestamp(),
-          adminUids: [user.uid],
-          memberUids: [user.uid],
-          admin: user.email,
-          members: [user.email]
-        };
+      const list = getCustomTrips();
+      list.push(newTrip);
+      saveCustomTrips(list);
 
-        const docRef = await db.collection('trips').add(newTrip);
-        addTripModal.style.display = 'none';
-        addTripForm.reset();
-        window.location.href = `trip.html?id=${docRef.id}`;
-      } catch (err) {
-        console.error("Error adding trip:", err);
-        alert("建立失敗：" + err.message);
-      } finally {
-        submitBtn.disabled = false;
-        submitBtn.textContent = '建立旅程';
-      }
-    });
+      addTripModal.style.display = 'none';
+      addTripForm.reset();
+      
+      window.location.href = `trip.html?id=${newId}`;
+    };
+
+    renderPortal();
   </script>
 </body>
 </html>

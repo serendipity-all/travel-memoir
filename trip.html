@@ -1056,6 +1056,38 @@
 
     // Edit Controls Event Delegation
     document.addEventListener('click', (e) => {
+      // Event delegation for Add Spot button (works reliably across any DOM changes)
+      if (e.target.closest('.btn-add-spot, .add-spot')) {
+        const addBtn = e.target.closest('.btn-add-spot, .add-spot');
+        const dayCard = addBtn.closest('.day-card');
+        if (dayCard) {
+          const dayNum = Number(dayCard.id.replace('day-', ''));
+          const d = tripData.days.find(x => x.day === dayNum);
+          if (d) {
+            const spotName = prompt('請輸入新增景點名稱（例如：迪霍拉里海蝕拱門 Dyrhólaey）：');
+            if (spotName && spotName.trim()) {
+              const newSpot = {
+                id: `spot-new-${Date.now()}`,
+                name: spotName.trim(),
+                en: spotName.trim(),
+                type: 'nature',
+                lat: d.spots[0]?.lat || 64.14,
+                lng: d.spots[0]?.lng || -21.92,
+                img: 'images/kirkjufell.jpg',
+                wiki: '',
+                highlight: '點擊此處編輯景點特色與亮點...',
+                gear: '防風防水外套、好走的鞋',
+                caution: '請留意現場天氣與安全指示。'
+              };
+              d.spots.push(newSpot);
+              const sg = dayCard.querySelector('.spot-grid');
+              if (sg) sg.appendChild(spotCard(newSpot, d));
+              saveItineraryToLocal();
+              if (typeof initMap === 'function') initMap();
+            }
+          }
+        }
+      }
       if (e.target.closest('.btn-move-up')) {
         const spotCardEl = e.target.closest('.spot-card');
         if (spotCardEl && spotCardEl.previousElementSibling) {
@@ -1184,7 +1216,7 @@
     initMap();
     setupFilters();
     setupMisc();
-    loadItineraryFromLocal();
+    // loadItineraryFromLocal();
 
     const dialog = document.getElementById('spotDialog');
     const dialogClose = document.querySelector('#spotDialog .dialog-close');

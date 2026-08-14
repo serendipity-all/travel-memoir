@@ -485,6 +485,34 @@
      ICELAND 2026 - EDITORIAL INTERACTIVE LOGIC & CLOUD SYNC
      ========================================================================== */
 
+  // Option A: Smart Spot Search & Match Global Functions
+  let activeTargetDay = null;
+
+  function openSpotSearchModal(day) {
+    activeTargetDay = day;
+    const spotSearchModal = document.getElementById('spot-search-modal');
+    const spotSearchInput = document.getElementById('spot-search-input');
+    const spotSearchStatus = document.getElementById('spot-search-status');
+    const spotSearchResults = document.getElementById('spot-search-results');
+    
+    if (spotSearchModal) {
+      if (spotSearchInput) spotSearchInput.value = '';
+      if (spotSearchResults) spotSearchResults.innerHTML = '';
+      if (spotSearchStatus) {
+        spotSearchStatus.style.display = 'block';
+        spotSearchStatus.innerHTML = '請輸入景點名稱，系統將自動比對照片、英文名稱與地圖座標...';
+      }
+      spotSearchModal.classList.add('active');
+      setTimeout(() => { if (spotSearchInput) spotSearchInput.focus(); }, 150);
+    }
+  }
+
+  function closeSpotSearchModal() {
+    const spotSearchModal = document.getElementById('spot-search-modal');
+    if (spotSearchModal) spotSearchModal.classList.remove('active');
+  }
+
+
   const dayColors = ['#ff5a36','#f89e3d','#c36ff0','#5b93e5','#2fae84','#6e8d4a','#cf6b8b','#7b6fe0','#e0b438','#2f9ea4','#71808a'];
   let map, markerLayer, routeLine;
   const allMarkers = [];
@@ -632,25 +660,8 @@
         addSpotBtn.onclick = (e) => {
           e.preventDefault();
           e.stopPropagation();
-          const spotName = prompt('請輸入新增景點名稱（例如：迪霍拉里海蝕拱門 Dyrhólaey）：');
-          if (spotName && spotName.trim()) {
-            const newSpot = {
-              id: `spot-new-${Date.now()}`,
-              name: spotName.trim(),
-              en: spotName.trim(),
-              type: 'nature',
-              lat: d.spots[0]?.lat || 64.14,
-              lng: d.spots[0]?.lng || -21.92,
-              img: 'images/kirkjufell.jpg',
-              wiki: '',
-              highlight: '點擊編輯特色說明...',
-              gear: '防風防水外套、好走的鞋',
-              caution: '請留意現場天氣與安全指示。'
-            };
-            d.spots.push(newSpot);
-            sg.appendChild(spotCard(newSpot, d));
-            if (typeof saveItineraryToLocal === 'function') saveItineraryToLocal();
-            if (typeof initMap === 'function') initMap();
+          if (typeof openSpotSearchModal === 'function') {
+            openSpotSearchModal(d);
           }
         };
       }

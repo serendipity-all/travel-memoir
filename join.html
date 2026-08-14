@@ -1,0 +1,641 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>加入旅行 | Travel Memoir</title>
+  <meta name="description" content="你已被邀請加入一段旅行回憶錄。" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&family=Noto+Sans+TC:wght@400;500;700;900&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+  <link rel="stylesheet" href="style.css" />
+
+  <style>
+    /* Join Page Specific Styles */
+    .join-page {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+      background: var(--bg);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .join-aurora {
+      position: fixed;
+      inset: 0;
+      background:
+        radial-gradient(ellipse 80% 50% at 20% 10%, rgba(46,174,126,0.18) 0%, transparent 60%),
+        radial-gradient(ellipse 60% 40% at 80% 80%, rgba(91,147,229,0.14) 0%, transparent 60%),
+        radial-gradient(ellipse 50% 40% at 50% 50%, rgba(195,111,240,0.10) 0%, transparent 60%);
+      animation: aurora 12s ease-in-out infinite alternate;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    .join-card {
+      position: relative;
+      z-index: 1;
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-radius: 32px;
+      padding: 48px 40px;
+      max-width: 480px;
+      width: 100%;
+      text-align: center;
+      box-shadow: 0 32px 80px rgba(0,0,0,0.3);
+      backdrop-filter: blur(20px);
+    }
+
+    .join-brand {
+      font-size: 13px;
+      font-weight: 800;
+      letter-spacing: 0.15em;
+      color: var(--muted);
+      text-transform: uppercase;
+      margin-bottom: 32px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+
+    .join-brand-mark {
+      color: var(--accent);
+      font-size: 18px;
+    }
+
+    .join-cover {
+      width: 100%;
+      height: 180px;
+      object-fit: cover;
+      border-radius: 20px;
+      margin-bottom: 24px;
+      background: var(--line);
+    }
+
+    .join-cover-placeholder {
+      width: 100%;
+      height: 180px;
+      border-radius: 20px;
+      margin-bottom: 24px;
+      background: linear-gradient(135deg, var(--line), var(--surface));
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 48px;
+    }
+
+    .join-eyebrow {
+      font-size: 12px;
+      font-weight: 800;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--accent);
+      margin-bottom: 8px;
+    }
+
+    .join-title {
+      font-size: 28px;
+      font-weight: 900;
+      margin: 0 0 8px;
+      line-height: 1.2;
+    }
+
+    .join-meta {
+      font-size: 14px;
+      color: var(--muted);
+      margin-bottom: 32px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+
+    .join-meta span {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+
+    .join-divider {
+      border: none;
+      border-top: 1px solid var(--line);
+      margin: 24px 0;
+    }
+
+    .join-desc {
+      font-size: 14px;
+      color: var(--muted);
+      line-height: 1.65;
+      margin-bottom: 28px;
+    }
+
+    .google-btn {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      width: 100%;
+      padding: 16px 24px;
+      background: #fff;
+      color: #1f1f1f;
+      border: none;
+      border-radius: 14px;
+      font-size: 16px;
+      font-weight: 700;
+      font-family: inherit;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+    }
+
+    .google-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 24px rgba(0,0,0,0.2);
+    }
+
+    .google-btn:active { transform: translateY(0); }
+
+    .google-btn img {
+      width: 22px;
+      height: 22px;
+    }
+
+    .join-note {
+      margin-top: 16px;
+      font-size: 12px;
+      color: var(--muted);
+      opacity: 0.75;
+    }
+
+    /* Status States */
+    .join-state {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 16px;
+      padding: 16px 0;
+    }
+
+    .join-state-icon {
+      font-size: 56px;
+      line-height: 1;
+    }
+
+    .join-state h3 {
+      font-size: 22px;
+      font-weight: 800;
+      margin: 0;
+    }
+
+    .join-state p {
+      font-size: 14px;
+      color: var(--muted);
+      margin: 0;
+      line-height: 1.6;
+    }
+
+    .join-spinner {
+      width: 40px;
+      height: 40px;
+      border: 3px solid var(--line);
+      border-top-color: var(--accent);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+      margin: 0 auto 8px;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    .join-go-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 14px 28px;
+      background: var(--accent);
+      color: white;
+      border: none;
+      border-radius: 12px;
+      font-size: 15px;
+      font-weight: 700;
+      font-family: inherit;
+      cursor: pointer;
+      text-decoration: none;
+      transition: all 0.2s ease;
+      margin-top: 8px;
+    }
+
+    .join-go-btn:hover {
+      background: #e04a28;
+      transform: translateY(-2px);
+    }
+
+    @media (max-width: 520px) {
+      .join-card {
+        padding: 32px 24px;
+        border-radius: 24px;
+      }
+      .join-title { font-size: 22px; }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="join-aurora"></div>
+
+  <main class="join-page">
+    <div class="join-card" id="joinCard">
+
+      <div class="join-brand">
+        <span class="join-brand-mark">◒</span>
+        TRAVEL MEMOIR
+      </div>
+
+      <!-- Loading state -->
+      <div class="join-state" id="stateLoading">
+        <div class="join-spinner"></div>
+        <p>正在驗證邀請連結…</p>
+      </div>
+
+      <!-- Invalid/expired token -->
+      <div class="join-state" id="stateInvalid" style="display:none">
+        <div class="join-state-icon">⚠️</div>
+        <h3>邀請連結已失效</h3>
+        <p>此邀請連結可能已過期或不存在。<br>請聯繫旅行管理員重新取得邀請連結。</p>
+      </div>
+
+      <!-- Already joined -->
+      <div class="join-state" id="stateAlready" style="display:none">
+        <div class="join-state-icon">✅</div>
+        <h3>你已經是成員了！</h3>
+        <p id="alreadyTripName">這趟旅行你已加入，可以直接查看行程。</p>
+        <a id="alreadyGoBtn" class="join-go-btn" href="#">
+          <i class="fa-solid fa-arrow-right"></i> 前往旅行
+        </a>
+      </div>
+
+      <!-- Success joined -->
+      <div class="join-state" id="stateSuccess" style="display:none">
+        <div class="join-state-icon">🎉</div>
+        <h3>成功加入！</h3>
+        <p id="successTripName">你已加入行程，個人清單已自動建立。<br>即將跳轉至行程頁面…</p>
+        <a id="successGoBtn" class="join-go-btn" href="#">
+          <i class="fa-solid fa-arrow-right"></i> 前往旅行
+        </a>
+      </div>
+
+      <!-- Error state -->
+      <div class="join-state" id="stateError" style="display:none">
+        <div class="join-state-icon">❌</div>
+        <h3>發生錯誤</h3>
+        <p id="errorMsg">加入過程中發生錯誤，請稍後再試或聯繫管理員。</p>
+      </div>
+
+      <!-- Main invite view (sign in required) -->
+      <div id="stateInvite" style="display:none">
+        <div id="coverWrap">
+          <div class="join-cover-placeholder">🌍</div>
+        </div>
+        <div class="join-eyebrow">你已被邀請加入</div>
+        <h2 class="join-title" id="inviteTripName">旅行行程</h2>
+        <div class="join-meta" id="inviteMeta">
+          <span><i class="fa-regular fa-calendar"></i> <span id="inviteDates">—</span></span>
+          <span><i class="fa-solid fa-location-dot"></i> <span id="inviteDestination">—</span></span>
+        </div>
+        <hr class="join-divider">
+        <p class="join-desc">
+          加入後你可以查看完整行程資訊、管理自己的行前準備清單與打包清單，以及新增個人私人筆記。
+        </p>
+
+        <!-- Signed out: show Google sign-in -->
+        <div id="signInBlock">
+          <button class="google-btn" id="googleSignInBtn">
+            <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google" />
+            用 Google 帳號登入並加入
+          </button>
+          <p class="join-note">登入即代表你同意加入此旅行行程，並可查看相關資訊。</p>
+        </div>
+
+        <!-- Signed in: show join button -->
+        <div id="joinBlock" style="display:none">
+          <div style="display:flex;align-items:center;gap:12px;margin-bottom:20px;padding:12px 16px;background:var(--bg);border:1px solid var(--line);border-radius:12px;">
+            <img id="userAvatar" src="" alt="" width="36" height="36" style="border-radius:50%;display:none;">
+            <div style="text-align:left;">
+              <div style="font-size:13px;font-weight:700;" id="userDisplayName">—</div>
+              <div style="font-size:12px;color:var(--muted);" id="userEmail">—</div>
+            </div>
+            <button onclick="firebase.auth().signOut()" style="margin-left:auto;font-size:12px;color:var(--muted);background:none;border:none;cursor:pointer;font-family:inherit;">
+              切換帳號
+            </button>
+          </div>
+          <button class="google-btn" id="confirmJoinBtn" style="background:var(--accent);color:white;">
+            <i class="fa-solid fa-check"></i>
+            確認加入這趟旅行
+          </button>
+          <p class="join-note">你的清單與筆記完全個人化，其他旅伴看不到你的資料。</p>
+        </div>
+      </div>
+
+    </div>
+  </main>
+
+  <!-- Firebase Compat SDK -->
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+
+  <script>
+  /* ============================================================
+     TRAVEL MEMOIR — JOIN PAGE
+     ============================================================ */
+  const firebaseConfig = {
+    apiKey: "AIzaSyALQhQzhnkj-UOmRZGVQKMKqkW0DecwE3s",
+    authDomain: "my-travel-book-85243.firebaseapp.com",
+    projectId: "my-travel-book-85243",
+    storageBucket: "my-travel-book-85243.firebasestorage.app",
+    messagingSenderId: "936708966292",
+    appId: "1:936708966292:web:d3c7c08e14f60548cf3181"
+  };
+
+  firebase.initializeApp(firebaseConfig);
+  const auth = firebase.auth();
+  const db   = firebase.firestore();
+
+  // ── UI State Helpers ──────────────────────────────────────────
+  const states = ['Loading','Invalid','Already','Success','Error','Invite'];
+  function showState(name) {
+    states.forEach(s => {
+      const el = document.getElementById(`state${s}`);
+      if (el) el.style.display = (s === name) ? '' : 'none';
+    });
+  }
+
+  // ── Parse URL Token ───────────────────────────────────────────
+  const params = new URLSearchParams(window.location.search);
+  const token  = params.get('token');
+
+  if (!token) {
+    showState('Invalid');
+  }
+
+  // ── Token & Trip Data ─────────────────────────────────────────
+  let tripId   = null;
+  let tripInfo = null;
+  let invitationData = null;
+
+  async function loadInvitation() {
+    if (!token) return;
+
+    try {
+      // Find the invitation across all trips
+      // We store token as document ID, but we need to find which trip it belongs to
+      // Strategy: the invitation doc stores tripId
+      // We need to search globally or the token URL includes tripId
+      // Since our token is stored as: trips/{tripId}/invitations/{token}
+      // We encode tripId in the token URL: join.html?token=xxx&trip=iceland-2026
+      tripId = params.get('trip');
+
+      if (!tripId) {
+        showState('Invalid');
+        return;
+      }
+
+      // Validate the token
+      const invRef = db.collection('trips').doc(tripId).collection('invitations').doc(token);
+      const invSnap = await invRef.get();
+
+      if (!invSnap.exists) {
+        showState('Invalid');
+        return;
+      }
+
+      invitationData = invSnap.data();
+
+      // Check expiry
+      const now = firebase.firestore.Timestamp.now();
+      if (invitationData.expiresAt && invitationData.expiresAt.toMillis() < now.toMillis()) {
+        showState('Invalid');
+        return;
+      }
+
+      // Load trip info
+      const tripSnap = await db.collection('trips').doc(tripId).get();
+      if (!tripSnap.exists) {
+        showState('Invalid');
+        return;
+      }
+
+      tripInfo = tripSnap.data();
+
+      // Populate UI
+      populateInviteView();
+      showState('Invite');
+
+    } catch (err) {
+      console.error('loadInvitation error:', err);
+      document.getElementById('errorMsg').textContent = err.message || '驗證連結時發生錯誤。';
+      showState('Error');
+    }
+  }
+
+  function populateInviteView() {
+    document.title = `加入「${tripInfo.title}」| Travel Memoir`;
+
+    document.getElementById('inviteTripName').textContent = tripInfo.title || '旅行行程';
+    document.getElementById('inviteDestination').textContent = tripInfo.destination || '—';
+
+    if (tripInfo.startDate && tripInfo.endDate) {
+      const fmt = d => new Intl.DateTimeFormat('zh-TW', { month: 'numeric', day: 'numeric' }).format(new Date(d + 'T12:00:00'));
+      document.getElementById('inviteDates').textContent = `${fmt(tripInfo.startDate)} – ${fmt(tripInfo.endDate)}`;
+    }
+
+    if (tripInfo.coverImg) {
+      const wrap = document.getElementById('coverWrap');
+      wrap.innerHTML = `<img class="join-cover" src="${tripInfo.coverImg}" alt="${tripInfo.title}" onerror="this.style.display='none'">`;
+    }
+  }
+
+  // ── Auth State ────────────────────────────────────────────────
+  auth.onAuthStateChanged(async user => {
+    if (!token || !tripId) return;
+
+    const signInBlock = document.getElementById('signInBlock');
+    const joinBlock   = document.getElementById('joinBlock');
+
+    if (!user) {
+      signInBlock.style.display = '';
+      joinBlock.style.display   = 'none';
+      return;
+    }
+
+    // User is signed in — update UI
+    signInBlock.style.display = 'none';
+    joinBlock.style.display   = '';
+
+    document.getElementById('userDisplayName').textContent = user.displayName || user.email;
+    document.getElementById('userEmail').textContent       = user.email;
+    if (user.photoURL) {
+      const avatar = document.getElementById('userAvatar');
+      avatar.src     = user.photoURL;
+      avatar.style.display = '';
+    }
+
+    // Check if already a member
+    const memberRef = db.collection('trips').doc(tripId)
+                        .collection('allowedUids').doc(user.uid);
+    const memberSnap = await memberRef.get();
+    if (memberSnap.exists) {
+      document.getElementById('alreadyTripName').textContent =
+        `你已是「${tripInfo?.title || '此行程'}」的成員，可以直接查看行程。`;
+      document.getElementById('alreadyGoBtn').href = `trip.html?id=${tripId}`;
+      showState('Already');
+    }
+  });
+
+  // ── Google Sign-In ────────────────────────────────────────────
+  document.getElementById('googleSignInBtn').onclick = async () => {
+    const provider = new firebase.auth.GoogleAuthProvider();
+    try {
+      await auth.signInWithPopup(provider);
+    } catch (err) {
+      if (err.code !== 'auth/popup-closed-by-user') {
+        document.getElementById('errorMsg').textContent = '登入失敗：' + err.message;
+        showState('Error');
+      }
+    }
+  };
+
+  // ── Confirm Join ──────────────────────────────────────────────
+  document.getElementById('confirmJoinBtn').onclick = async () => {
+    const user = auth.currentUser;
+    if (!user || !tripId || !tripInfo) return;
+
+    const btn = document.getElementById('confirmJoinBtn');
+    btn.disabled    = true;
+    btn.innerHTML   = '<i class="fa-solid fa-spinner fa-spin"></i> 正在加入…';
+
+    try {
+      const batch = db.batch();
+
+      // 1. Add to allowedUids
+      const allowedRef = db.collection('trips').doc(tripId)
+                           .collection('allowedUids').doc(user.uid);
+      batch.set(allowedRef, {
+        email:       user.email,
+        displayName: user.displayName || '',
+        photoURL:    user.photoURL || '',
+        joinedAt:    firebase.firestore.FieldValue.serverTimestamp()
+      });
+
+      // 2. Write user profile
+      const userRef = db.collection('users').doc(user.uid);
+      batch.set(userRef, {
+        email:       user.email,
+        displayName: user.displayName || '',
+        photoURL:    user.photoURL || '',
+        updatedAt:   firebase.firestore.FieldValue.serverTimestamp()
+      }, { merge: true });
+
+      await batch.commit();
+
+      // 3. Initialize personal checklists from template
+      await initPersonalChecklists(user.uid, tripId);
+
+      // 4. Show success & redirect
+      document.getElementById('successTripName').textContent =
+        `你已成功加入「${tripInfo.title}」！個人清單已自動建立。即將跳轉至行程頁面…`;
+      document.getElementById('successGoBtn').href = `trip.html?id=${tripId}`;
+      showState('Success');
+
+      setTimeout(() => {
+        window.location.href = `trip.html?id=${tripId}`;
+      }, 2500);
+
+    } catch (err) {
+      console.error('join error:', err);
+      document.getElementById('errorMsg').textContent = '加入失敗：' + err.message;
+      showState('Error');
+    }
+  };
+
+  // ── Initialize Personal Checklists ───────────────────────────
+  async function initPersonalChecklists(uid, tId) {
+    try {
+      // Load template
+      const tmplRef  = db.collection('trips').doc(tId).collection('checklistTemplate').doc('main');
+      const tmplSnap = await tmplRef.get();
+
+      let prepItems    = [];
+      let packingItems = [];
+
+      if (tmplSnap.exists) {
+        const tmpl = tmplSnap.data();
+        prepItems    = (tmpl.prep    || []).map(item => ({ ...item, checked: false, source: 'template' }));
+        packingItems = (tmpl.packing || []).map(item => ({ ...item, checked: false, source: 'template' }));
+      } else {
+        // Fallback: default checklist if no template exists yet
+        prepItems    = getDefaultPrep();
+        packingItems = getDefaultPacking();
+      }
+
+      // Write personal data
+      const memberRef = db.collection('trips').doc(tId)
+                          .collection('memberData').doc(uid);
+      await memberRef.set({
+        prepChecklist:    prepItems,
+        packingChecklist: packingItems,
+        privateNotes:     [],
+        initializedAt:    firebase.firestore.FieldValue.serverTimestamp()
+      }, { merge: true });
+
+    } catch (err) {
+      console.warn('initPersonalChecklists warning (non-fatal):', err);
+    }
+  }
+
+  function getDefaultPrep() {
+    return [
+      { id: 'prep-1',  text: '檢查護照效期（回程起算 6 個月以上）',                    category: 'admin',    checked: false, source: 'template' },
+      { id: 'prep-2',  text: '投保旅遊醫療險（含海外急難救助）',                        category: 'admin',    checked: false, source: 'template' },
+      { id: 'prep-3',  text: '信用卡開通海外刷卡與 4 位數 PIN 碼',                     category: 'admin',    checked: false, source: 'template' },
+      { id: 'prep-4',  text: '機票、住宿訂單紙本與電子檔備份',                          category: 'admin',    checked: false, source: 'template' },
+      { id: 'prep-5',  text: '採購防風防水衝鋒衣與防水褲',                              category: 'gear',     checked: false, source: 'template' },
+      { id: 'prep-6',  text: '採購高筒防水登山鞋（提前試穿磨合）',                      category: 'gear',     checked: false, source: 'template' },
+      { id: 'prep-7',  text: '採購防風毛帽、保暖手套、防風圍脖、厚羊毛襪',             category: 'gear',     checked: false, source: 'template' },
+      { id: 'prep-8',  text: '準備歐規電源轉接頭 2–3 個',                              category: 'tech',     checked: false, source: 'template' },
+      { id: 'prep-9',  text: '辦理當地上網 SIM 卡或國際漫遊',                          category: 'tech',     checked: false, source: 'template' },
+      { id: 'prep-10', text: '備妥個人常備藥（感冒藥、腸胃藥、暈船藥）',               category: 'tech',     checked: false, source: 'template' },
+    ];
+  }
+
+  function getDefaultPacking() {
+    return [
+      { id: 'pack-1',  text: '護照、信用卡、少量現金',                   category: 'carry',   checked: false, source: 'template' },
+      { id: 'pack-2',  text: '手機、充電線、大容量行動電源',              category: 'carry',   checked: false, source: 'template' },
+      { id: 'pack-3',  text: '相機、備用電池、記憶卡',                   category: 'carry',   checked: false, source: 'template' },
+      { id: 'pack-4',  text: '防風防水衝鋒外套（置於手提行李）',         category: 'cabin',   checked: false, source: 'template' },
+      { id: 'pack-5',  text: '美麗諾羊毛排汗底層衣褲 3–4 套',           category: 'checked', checked: false, source: 'template' },
+      { id: 'pack-6',  text: '保暖中層（抓絨或輕羽絨）2 件',            category: 'checked', checked: false, source: 'template' },
+      { id: 'pack-7',  text: '高筒防水登山鞋',                           category: 'checked', checked: false, source: 'template' },
+      { id: 'pack-8',  text: '厚羊毛襪 4–5 雙',                         category: 'checked', checked: false, source: 'template' },
+      { id: 'pack-9',  text: '泳衣／泳褲與防水袋（溫泉用）',            category: 'checked', checked: false, source: 'template' },
+      { id: 'pack-10', text: '個人保養品與盥洗用品',                     category: 'checked', checked: false, source: 'template' },
+    ];
+  }
+
+  // ── Init ──────────────────────────────────────────────────────
+  if (token) {
+    loadInvitation();
+  } else {
+    showState('Invalid');
+  }
+  </script>
+</body>
+</html>

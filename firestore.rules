@@ -1,0 +1,98 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ── 輔助函式 ──────────────────────────────────────────────
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    // 超級管理員（永久，email 綁定）
+    function isSuperAdmin() {
+      return signedIn() && request.auth.token.email == 'dreamland11023@gmail.com';
+    }
+
+    // 全站管理員：超級管理員 OR 在 admins 集合中（用於新增先生帳號）
+    function isGlobalAdmin() {
+      return isSuperAdmin() ||
+        (signedIn() && exists(/databases/$(database)/documents/admins/$(request.auth.uid)));
+    }
+
+    // 特定行程的管理員
+    function isTripAdmin(tripId) {
+      return signedIn() && (
+        isGlobalAdmin() ||
+        request.auth.uid in get(/databases/$(database)/documents/trips/$(tripId)).data.adminUids
+      );
+    }
+
+    // 特定行程的成員（管理員 + 被邀請的旅伴）
+    function isTripMember(tripId) {
+      return signedIn() && (
+        isTripAdmin(tripId) ||
+        exists(/databases/$(database)/documents/trips/$(tripId)/allowedUids/$(request.auth.uid))
+      );
+    }
+
+    // ── admins 集合（用於管理員列表，如新增先生帳號）──
+    match /admins/{uid} {
+      allow read: if signedIn() && request.auth.uid == uid;
+      allow write: if isSuperAdmin();
+    }
+
+    // ── users 集合（個人公開資料：名稱、頭像）──
+    match /users/{uid} {
+      allow read: if signedIn();
+      allow write: if signedIn() && request.auth.uid == uid;
+    }
+
+    // ── trips 集合 ────────────────────────────────────────────
+    match /trips/{tripId} {
+      allow read: if isTripMember(tripId);
+      allow create: if isGlobalAdmin();
+      allow update, delete: if isTripAdmin(tripId);
+
+      // 已邀請的旅伴 uid 清單
+      match /allowedUids/{uid} {
+        allow read: if isTripMember(tripId);
+        allow write: if isTripAdmin(tripId);
+      }
+
+      // 邀請連結 token（登入用戶可讀以驗證 token）
+      match /invitations/{token} {
+        allow read: if signedIn();
+        allow write: if isTripAdmin(tripId);
+      }
+
+      // 行程資料（每日行程，共用）
+      match /itinerary/{doc} {
+        allow read: if isTripMember(tripId);
+        allow write: if isTripAdmin(tripId);
+      }
+
+      // 清單共用範本（管理員可寫，成員只能讀）
+      match /checklistTemplate/{doc} {
+        allow read: if isTripMember(tripId);
+        allow write: if isTripAdmin(tripId);
+      }
+
+      // 清單推播紀錄
+      match /checklistPushes/{pushId} {
+        allow read: if isTripMember(tripId);
+        allow create: if isTripAdmin(tripId);
+
+        // 個人回應（只有本人可讀寫自己的回應）
+        match /responses/{uid} {
+          allow read, write: if signedIn() && request.auth.uid == uid;
+        }
+      }
+
+      // 個人資料（個人清單 + 私人筆記）── 只有本人可讀寫
+      match /memberData/{uid} {
+        allow read, write: if signedIn() &&
+          request.auth.uid == uid &&
+          isTripMember(tripId);
+      }
+    }
+  }
+}

@@ -38,7 +38,7 @@
     </nav>
     <div class="topbar-actions">
       <div class="settings-dropdown-wrap">
-        <button id="settingsMenuBtn" class="edit-mode-btn"><i class="fa-solid fa-gear"></i> <span>⚙️ 設定</span> <i class="fa-solid fa-chevron-down" style="font-size: 10px; margin-left: 2px;"></i></button>
+        <button id="settingsMenuBtn" class="edit-mode-btn"><span>⚙️ 設定</span> <i class="fa-solid fa-chevron-down" style="font-size: 10px; margin-left: 2px;"></i></button>
         <div id="settingsDropdown" class="settings-dropdown glass">
           <button id="edit-mode-toggle" class="dropdown-item"><i class="fa-solid fa-pen-to-square"></i> <span>✏️ 編輯模式</span></button>
           <button id="cloud-sync-btn" class="dropdown-item"><i class="fa-solid fa-cloud-arrow-up"></i> <span>☁️ 同步全隊</span></button>
@@ -1222,6 +1222,23 @@
     initMap();
     setupFilters();
     setupMisc();
+
+    // Settings Dropdown Toggle Action
+    const settingsMenuBtn = document.getElementById('settingsMenuBtn');
+    const settingsDropdown = document.getElementById('settingsDropdown');
+    if (settingsMenuBtn && settingsDropdown) {
+      settingsMenuBtn.onclick = (e) => {
+        e.stopPropagation();
+        settingsDropdown.classList.toggle('active');
+      };
+
+      document.addEventListener('click', (e) => {
+        if (!e.target.closest('.settings-dropdown-wrap')) {
+          settingsDropdown.classList.remove('active');
+        }
+      });
+    }
+
     // loadItineraryFromLocal();
 
     const dialog = document.getElementById('spotDialog');

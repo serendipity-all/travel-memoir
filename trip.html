@@ -38,7 +38,7 @@
     </nav>
     <div class="topbar-actions">
       <div class="settings-dropdown-wrap">
-        <button id="settingsMenuBtn" class="edit-mode-btn"><span>⚙️ 設定</span> <i class="fa-solid fa-chevron-down" style="font-size: 10px; margin-left: 2px;"></i></button>
+        <button id="settingsMenuBtn" type="button" class="edit-mode-btn"><span>⚙️ 設定</span> <i class="fa-solid fa-chevron-down" style="font-size: 10px; margin-left: 2px;"></i></button>
         <div id="settingsDropdown" class="settings-dropdown glass">
           <button id="edit-mode-toggle" class="dropdown-item"><i class="fa-solid fa-pen-to-square"></i> <span>✏️ 編輯模式</span></button>
           <button id="cloud-sync-btn" class="dropdown-item"><i class="fa-solid fa-cloud-arrow-up"></i> <span>☁️ 同步全隊</span></button>
@@ -490,6 +490,21 @@
   const tripId = urlParams.get('id') || 'iceland-2026';
   
   let tripData;
+// Auto-purge bad/corrupted local storage keys for iceland-2026 on load
+  if (tripId === 'iceland-2026') {
+    const rawData = localStorage.getItem('memoir-trip-data-iceland-2026');
+    if (rawData) {
+      try {
+        const p = JSON.parse(rawData);
+        if (!p || !p.days || p.days.length === 0 || !p.days[0].spots || p.days[0].spots.length === 0) {
+          localStorage.removeItem('memoir-trip-data-iceland-2026');
+          localStorage.removeItem('iceland_2026_editorial_days');
+        }
+      } catch(e) {
+        localStorage.removeItem('memoir-trip-data-iceland-2026');
+      }
+    }
+  }
 
   if (!tripData) tripData = icelandData;
   if (!tripData.days || !Array.isArray(tripData.days) || tripData.days.length === 0) {

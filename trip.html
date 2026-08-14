@@ -1461,9 +1461,10 @@
   }
 
   function saveItineraryToLocal() {
-    const dayList = document.getElementById('dayList');
-    if (dayList && dayList.innerHTML.includes('day-card')) {
-      localStorage.setItem('iceland_2026_editorial_days', dayList.innerHTML);
+    try {
+      localStorage.setItem(`memoir-trip-${tripId}`, JSON.stringify(tripData));
+    } catch(e) {
+      console.error('Error saving tripData:', e);
     }
   }
 
@@ -1501,6 +1502,18 @@
     initMap();
     setupFilters();
     setupMisc();
+
+    // Update Dynamic Topbar & Hero Titles for Custom Trips
+    if (tripData) {
+      const topbarTitle = document.getElementById('topbarTripTitle');
+      if (topbarTitle) topbarTitle.textContent = `← 專案大廳 · ${tripData.title || '漫遊手冊'}`;
+
+      const heroH1 = document.querySelector('.hero h1');
+      if (heroH1) {
+        heroH1.innerHTML = `${tripData.title || '旅遊手冊'}<br><span>${tripData.dest || ''} · 十一日環島旅遊書</span>`;
+      }
+    }
+
     initSpotSearchModal();
 
     // Settings Dropdown Toggle Action
